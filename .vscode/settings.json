@@ -1,0 +1,12 @@
+{
+  "files.exclude": { "**/.data": true, "**/.wrangler": true },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/backups": true,
+    "**/.data": true
+  },
+  "files.watcherExclude": { "**/node_modules/**": true, "**/backups/**": true },
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "editor.tabSize": 2
+}

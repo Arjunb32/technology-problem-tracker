@@ -1,0 +1,23 @@
+{
+  "name": "@tracker/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch --import tsx src/local.ts",
+    "build": "wrangler deploy --dry-run --outdir dist",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "tsx --test test/*.test.ts"
+  },
+  "dependencies": {
+    "@tracker/contracts": "workspace:*",
+    "@supabase/supabase-js": "^2.117.2",
+    "hono": "^4.13.13",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "tsx": "^4.21.0",
+    "wrangler": "^4.76.0"
+  }
+}

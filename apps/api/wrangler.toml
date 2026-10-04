@@ -1,0 +1,12 @@
+name = "technology-problem-tracker-api"
+main = "src/worker.ts"
+compatibility_date = "2026-10-01"
+workers_dev = true
+
+[vars]
+APP_ENV = "production"
+ALLOWED_ORIGINS = "https://technology-problem-tracker.pages.dev"
+API_PUBLIC_URL = "https://technology-problem-tracker-api.YOUR_ACCOUNT.workers.dev"
+
+# Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY with `wrangler secret put`.
+# No paid bindings or demo mode are enabled in the deployed worker.

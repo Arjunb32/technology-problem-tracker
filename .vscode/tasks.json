@@ -1,0 +1,35 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Tracker: start website and API",
+      "type": "shell",
+      "command": "pnpm dev",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "group": "build"
+    },
+    {
+      "label": "Tracker: all checks",
+      "type": "shell",
+      "command": "pnpm check",
+      "problemMatcher": "$tsc",
+      "group": { "kind": "build", "isDefault": true }
+    },
+    {
+      "label": "Tracker: browser journey tests",
+      "type": "shell",
+      "command": "pnpm test:e2e",
+      "problemMatcher": [],
+      "group": "test"
+    },
+    {
+      "label": "Tracker: backup tool tests",
+      "type": "shell",
+      "command": "node --test scripts/backup.test.mjs",
+      "problemMatcher": [],
+      "group": "test"
+    }
+  ]
+}

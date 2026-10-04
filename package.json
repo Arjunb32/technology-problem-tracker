@@ -1,0 +1,24 @@
+{
+  "name": "technology-problem-tracker",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@11.25.0",
+  "scripts": {
+    "dev": "concurrently -k -n api,web -c cyan,green \"pnpm --filter @tracker/api dev\" \"pnpm --filter @tracker/web dev\"",
+    "build": "pnpm --filter @tracker/web build && pnpm --filter @tracker/api build",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm --filter @tracker/api test && node --test scripts/backup.test.mjs && node --test tests/database/*.test.mjs",
+    "test:e2e": "playwright test",
+    "check": "pnpm typecheck && pnpm test && pnpm build",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@electric-sql/pglite": "^0.5.8",
+    "@playwright/test": "^1.58.2",
+    "concurrently": "^9.2.1",
+    "prettier": "^3.9.9",
+    "typescript": "^5.9.3"
+  }
+}

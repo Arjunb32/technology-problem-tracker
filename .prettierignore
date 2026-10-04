@@ -1,0 +1,9 @@
+node_modules
+dist
+.data
+.wrangler
+playwright-report
+test-results
+pnpm-lock.yaml
+*.tsbuildinfo
+technology_problem_solving_platform_complete_idea.md
