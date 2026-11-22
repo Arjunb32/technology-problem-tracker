@@ -1,0 +1,575 @@
+{
+  "version": 0,
+  "profiles": [
+    {
+      "id": "demo-alex",
+      "username": "alexchen",
+      "displayName": "Alex Chen",
+      "bio": "Curious about the things that make technology work.",
+      "expertise": [
+        "Windows",
+        "Hardware"
+      ],
+      "role": "member",
+      "restricted": false,
+      "createdAt": "2026-10-01T09:00:00.000Z"
+    },
+    {
+      "id": "demo-sam",
+      "username": "samrivera",
+      "displayName": "Sam Rivera",
+      "bio": "Software tinkerer. Testing fixes and sharing what works.",
+      "expertise": [
+        "Linux",
+        "Networking"
+      ],
+      "role": "member",
+      "restricted": false,
+      "createdAt": "2026-10-01T09:00:00.000Z"
+    },
+    {
+      "id": "demo-morgan",
+      "username": "morganlee",
+      "displayName": "Morgan Lee",
+      "bio": "Community moderator. Evidence makes better answers.",
+      "expertise": [
+        "Troubleshooting"
+      ],
+      "role": "admin",
+      "restricted": false,
+      "createdAt": "2026-10-01T09:00:00.000Z"
+    }
+  ],
+  "problems": [
+    {
+      "authorId": "demo-alex",
+      "classification": "Software",
+      "description": "After waking my laptop from sleep, Wi-Fi drops every few minutes. Reconnecting works briefly, but the connection becomes unstable again.",
+      "setup": "Windows 11 24H2 · Intel AX210 · driver 23.80",
+      "symptoms": "Connected, no internet. Repeats after wake.",
+      "steps": "Put the laptop to sleep for 10 minutes, wake it, then stream a video.",
+      "attemptedFixes": "Restarted the router and reinstalled the current Wi-Fi driver.",
+      "tags": [
+        "Wi-Fi",
+        "Windows 11",
+        "Sleep mode"
+      ],
+      "status": "Confirmed",
+      "canonicalId": null,
+      "hidden": false,
+      "demo": true,
+      "createdAt": "2026-10-01T09:00:00.000Z",
+      "updatedAt": "2026-10-01T09:00:00.000Z",
+      "resolvedAt": null,
+      "version": 1,
+      "id": "demo-wifi",
+      "title": "Wi-Fi disconnects every few minutes after waking from sleep",
+      "category": "Networking",
+      "product": "Intel AX210"
+    },
+    {
+      "authorId": "demo-sam",
+      "classification": "Hardware",
+      "description": "My external display flashes black intermittently while connected through a USB-C dock. The laptop screen remains stable and the problem gets worse at higher refresh rates.",
+      "setup": "Dell XPS 13 · 144 Hz external display",
+      "symptoms": "",
+      "steps": "",
+      "attemptedFixes": "",
+      "tags": [
+        "USB-C",
+        "Display",
+        "Hardware"
+      ],
+      "status": "Investigating",
+      "canonicalId": null,
+      "hidden": false,
+      "demo": true,
+      "createdAt": "2026-09-30T09:00:00.000Z",
+      "updatedAt": "2026-10-01T09:00:00.000Z",
+      "resolvedAt": null,
+      "version": 1,
+      "id": "demo-display",
+      "title": "External monitor flickers when connected through a USB-C dock",
+      "category": "Computers",
+      "product": "USB-C display dock"
+    },
+    {
+      "authorId": "demo-alex",
+      "classification": "Software",
+      "description": "Reopening a saved session of twelve tabs causes memory use to climb steadily, even after closing the tabs. The issue seems related to an extension.",
+      "setup": "Ubuntu 24.04 · Chromium 130",
+      "symptoms": "",
+      "steps": "",
+      "attemptedFixes": "",
+      "tags": [
+        "Browser",
+        "Memory",
+        "Linux"
+      ],
+      "status": "Reported",
+      "canonicalId": null,
+      "hidden": false,
+      "demo": true,
+      "createdAt": "2026-09-29T09:00:00.000Z",
+      "updatedAt": "2026-10-01T09:00:00.000Z",
+      "resolvedAt": null,
+      "version": 1,
+      "id": "demo-browser",
+      "title": "Browser uses excessive memory after reopening saved tabs",
+      "category": "Software",
+      "product": "Chromium browser"
+    },
+    {
+      "authorId": "demo-sam",
+      "classification": "Hardware",
+      "description": "Audio cuts out for a moment whenever I move the Bluetooth mouse. The headphones sound fine when the mouse is disconnected.",
+      "setup": "Windows 11 · Bluetooth 5.2 headset",
+      "symptoms": "",
+      "steps": "",
+      "attemptedFixes": "",
+      "tags": [
+        "Bluetooth",
+        "Audio"
+      ],
+      "status": "Partially solved",
+      "canonicalId": null,
+      "hidden": false,
+      "demo": true,
+      "createdAt": "2026-09-28T09:00:00.000Z",
+      "updatedAt": "2026-10-01T09:00:00.000Z",
+      "resolvedAt": null,
+      "version": 1,
+      "id": "demo-bluetooth",
+      "title": "Bluetooth audio stutters when a second device is connected",
+      "category": "Computers",
+      "product": "Bluetooth headphones"
+    },
+    {
+      "authorId": "demo-alex",
+      "classification": "Software",
+      "description": "Websites stop loading after switching networks because DNS retains the previous network resolver. Other devices on the same network keep working.",
+      "setup": "Ubuntu 24.04 · NetworkManager",
+      "symptoms": "",
+      "steps": "",
+      "attemptedFixes": "",
+      "tags": [
+        "DNS",
+        "Linux",
+        "Networking"
+      ],
+      "status": "Resolved",
+      "canonicalId": null,
+      "hidden": false,
+      "demo": true,
+      "createdAt": "2026-09-27T09:00:00.000Z",
+      "updatedAt": "2026-10-01T09:00:00.000Z",
+      "resolvedAt": "2026-10-01T09:00:00.000Z",
+      "version": 1,
+      "id": "demo-dns",
+      "title": "DNS lookups fail after switching between home and office networks",
+      "category": "Networking",
+      "product": "NetworkManager"
+    },
+    {
+      "authorId": "demo-sam",
+      "classification": "Software",
+      "description": "Searching across a workspace with generated dependencies makes the editor freeze. Excluding dependency directories improves the situation but does not fully eliminate it.",
+      "setup": "macOS 15 · project with 60,000 files",
+      "symptoms": "",
+      "steps": "",
+      "attemptedFixes": "",
+      "tags": [
+        "Developer tools",
+        "Performance"
+      ],
+      "status": "Reported",
+      "canonicalId": null,
+      "hidden": false,
+      "demo": true,
+      "createdAt": "2026-09-26T09:00:00.000Z",
+      "updatedAt": "2026-10-01T09:00:00.000Z",
+      "resolvedAt": null,
+      "version": 1,
+      "id": "demo-editor",
+      "title": "Code editor freezes when searching a large project folder",
+      "category": "Software",
+      "product": "Code editor"
+    }
+  ],
+  "participation": [
+    {
+      "id": "demo-wifi-demo-alex-affected",
+      "problemId": "demo-wifi",
+      "userId": "demo-alex",
+      "kind": "affected",
+      "setup": "Windows 11 24H2 · Intel AX210 · driver 23.80",
+      "createdAt": "2026-10-01T09:00:00.000Z"
+    },
+    {
+      "id": "demo-wifi-demo-alex-vote",
+      "problemId": "demo-wifi",
+      "userId": "demo-alex",
+      "kind": "vote",
+      "setup": "",
+      "createdAt": "2026-10-01T09:00:00.000Z"
+    },
+    {
+      "id": "demo-wifi-demo-sam-affected",
+      "problemId": "demo-wifi",
+      "userId": "demo-sam",
+      "kind": "affected",
+      "setup": "Windows 11 24H2 · Intel AX210 · driver 23.80",
+      "createdAt": "2026-10-01T09:00:00.000Z"
+    },
+    {
+      "id": "demo-wifi-demo-sam-vote",
+      "problemId": "demo-wifi",
+      "userId": "demo-sam",
+      "kind": "vote",
+      "setup": "",
+      "createdAt": "2026-10-01T09:00:00.000Z"
+    },
+    {
+      "id": "demo-display-demo-alex-affected",
+      "problemId": "demo-display",
+      "userId": "demo-alex",
+      "kind": "affected",
+      "setup": "Dell XPS 13 · 144 Hz external display",
+      "createdAt": "2026-10-01T09:00:00.000Z"
+    },
+    {
+      "id": "demo-display-demo-alex-vote",
+      "problemId": "demo-display",
+      "userId": "demo-alex",
+      "kind": "vote",
+      "setup": "",
+      "createdAt": "2026-10-01T09:00:00.000Z"
+    },
+    {
+      "id": "demo-display-demo-sam-affected",
+      "problemId": "demo-display",
+      "userId": "demo-sam",
+      "kind": "affected",
+      "setup": "Dell XPS 13 · 144 Hz external display",
+      "createdAt": "2026-10-01T09:00:00.000Z"
+    },
+    {
+      "id": "demo-display-demo-sam-vote",
+      "problemId": "demo-display",
+      "userId": "demo-sam",
+      "kind": "vote",
+      "setup": "",
+      "createdAt": "2026-10-01T09:00:00.000Z"
+    },
+    {
+      "id": "demo-browser-demo-alex-affected",
+      "problemId": "demo-browser",
+      "userId": "demo-alex",
+      "kind": "affected",
+      "setup": "Ubuntu 24.04 · Chromium 130",
+      "createdAt": "2026-10-01T09:00:00.000Z"
+    },
+    {
+      "id": "demo-browser-demo-alex-vote",
+      "problemId": "demo-browser",
+      "userId": "demo-alex",
+      "kind": "vote",
+      "setup": "",
+      "createdAt": "2026-10-01T09:00:00.000Z"
+    },
+    {
+      "id": "demo-bluetooth-demo-alex-affected",
+      "problemId": "demo-bluetooth",
+      "userId": "demo-alex",
+      "kind": "affected",
+      "setup": "Windows 11 · Bluetooth 5.2 headset",
+      "createdAt": "2026-10-01T09:00:00.000Z"
+    },
+    {
+      "id": "demo-bluetooth-demo-alex-vote",
+      "problemId": "demo-bluetooth",
+      "userId": "demo-alex",
+      "kind": "vote",
+      "setup": "",
+      "createdAt": "2026-10-01T09:00:00.000Z"
+    },
+    {
+      "id": "demo-bluetooth-demo-sam-affected",
+      "problemId": "demo-bluetooth",
+      "userId": "demo-sam",
+      "kind": "affected",
+      "setup": "Windows 11 · Bluetooth 5.2 headset",
+      "createdAt": "2026-10-01T09:00:00.000Z"
+    },
+    {
+      "id": "demo-bluetooth-demo-sam-vote",
+      "problemId": "demo-bluetooth",
+      "userId": "demo-sam",
+      "kind": "vote",
+      "setup": "",
+      "createdAt": "2026-10-01T09:00:00.000Z"
+    },
+    {
+      "id": "demo-dns-demo-alex-affected",
+      "problemId": "demo-dns",
+      "userId": "demo-alex",
+      "kind": "affected",
+      "setup": "Ubuntu 24.04 · NetworkManager",
+      "createdAt": "2026-10-01T09:00:00.000Z"
+    },
+    {
+      "id": "demo-dns-demo-alex-vote",
+      "problemId": "demo-dns",
+      "userId": "demo-alex",
+      "kind": "vote",
+      "setup": "",
+      "createdAt": "2026-10-01T09:00:00.000Z"
+    },
+    {
+      "id": "demo-dns-demo-sam-affected",
+      "problemId": "demo-dns",
+      "userId": "demo-sam",
+      "kind": "affected",
+      "setup": "Ubuntu 24.04 · NetworkManager",
+      "createdAt": "2026-10-01T09:00:00.000Z"
+    },
+    {
+      "id": "demo-dns-demo-sam-vote",
+      "problemId": "demo-dns",
+      "userId": "demo-sam",
+      "kind": "vote",
+      "setup": "",
+      "createdAt": "2026-10-01T09:00:00.000Z"
+    },
+    {
+      "id": "demo-editor-demo-alex-affected",
+      "problemId": "demo-editor",
+      "userId": "demo-alex",
+      "kind": "affected",
+      "setup": "macOS 15 · project with 60,000 files",
+      "createdAt": "2026-10-01T09:00:00.000Z"
+    },
+    {
+      "id": "demo-editor-demo-alex-vote",
+      "problemId": "demo-editor",
+      "userId": "demo-alex",
+      "kind": "vote",
+      "setup": "",
+      "createdAt": "2026-10-01T09:00:00.000Z"
+    },
+    {
+      "id": "demo-editor-demo-sam-affected",
+      "problemId": "demo-editor",
+      "userId": "demo-sam",
+      "kind": "affected",
+      "setup": "macOS 15 · project with 60,000 files",
+      "createdAt": "2026-10-01T09:00:00.000Z"
+    },
+    {
+      "id": "demo-editor-demo-sam-vote",
+      "problemId": "demo-editor",
+      "userId": "demo-sam",
+      "kind": "vote",
+      "setup": "",
+      "createdAt": "2026-10-01T09:00:00.000Z"
+    }
+  ],
+  "solutions": [
+    {
+      "id": "demo-solution-0",
+      "problemId": "demo-wifi",
+      "authorId": "demo-sam",
+      "hidden": false,
+      "demo": true,
+      "createdAt": "2026-10-01T09:00:00.000Z",
+      "updatedAt": "2026-10-01T09:00:00.000Z"
+    },
+    {
+      "id": "demo-solution-1",
+      "problemId": "demo-bluetooth",
+      "authorId": "demo-sam",
+      "hidden": false,
+      "demo": true,
+      "createdAt": "2026-10-01T09:00:00.000Z",
+      "updatedAt": "2026-10-01T09:00:00.000Z"
+    },
+    {
+      "id": "demo-solution-2",
+      "problemId": "demo-dns",
+      "authorId": "demo-sam",
+      "hidden": false,
+      "demo": true,
+      "createdAt": "2026-10-01T09:00:00.000Z",
+      "updatedAt": "2026-10-01T09:00:00.000Z"
+    }
+  ],
+  "revisions": [
+    {
+      "id": "demo-revision-0",
+      "solutionId": "demo-solution-0",
+      "number": 1,
+      "title": "Disable power saving for the wireless adapter",
+      "instructions": "Open Device Manager, find the wireless adapter, and open Properties. In Power Management, clear “Allow the computer to turn off this device to save power.” Restart and test sleep and wake again.",
+      "reasoning": "This is an illustrative fix for demonstrating the testing workflow. Confirm applicability before making changes.",
+      "supportedSetup": "Windows 11 24H2 · Intel AX210 · driver 23.80",
+      "limitations": "Demonstration only; individual devices and software versions may behave differently.",
+      "warnings": "Save your work and record current settings before changing them.",
+      "createdAt": "2026-10-01T09:00:00.000Z"
+    },
+    {
+      "id": "demo-revision-1",
+      "solutionId": "demo-solution-1",
+      "number": 1,
+      "title": "Try a different USB port for your Bluetooth adapter",
+      "instructions": "Move the Bluetooth adapter away from USB 3 devices using a short extension cable. Test audio with both devices connected.",
+      "reasoning": "This is an illustrative fix for demonstrating the testing workflow. Confirm applicability before making changes.",
+      "supportedSetup": "Windows 11 · Bluetooth 5.2 headset",
+      "limitations": "Demonstration only; individual devices and software versions may behave differently.",
+      "warnings": "Save your work and record current settings before changing them.",
+      "createdAt": "2026-10-01T09:00:00.000Z"
+    },
+    {
+      "id": "demo-revision-2",
+      "solutionId": "demo-solution-2",
+      "number": 1,
+      "title": "Reconnect the resolver after switching networks",
+      "instructions": "Check the active resolver configuration. Reconnect the affected network in NetworkManager, then confirm that DNS queries use the current network. Record the old settings before changing anything.",
+      "reasoning": "This is an illustrative fix for demonstrating the testing workflow. Confirm applicability before making changes.",
+      "supportedSetup": "Ubuntu 24.04 · NetworkManager",
+      "limitations": "Demonstration only; individual devices and software versions may behave differently.",
+      "warnings": "Save your work and record current settings before changing them.",
+      "createdAt": "2026-10-01T09:00:00.000Z"
+    }
+  ],
+  "tests": [
+    {
+      "id": "demo-test-0",
+      "revisionId": "demo-revision-0",
+      "userId": "demo-alex",
+      "outcome": "Worked",
+      "setup": "Windows 11 24H2 · Intel AX210 · driver 23.80",
+      "evidence": "Illustrative successful community test.",
+      "createdAt": "2026-10-01T09:00:00.000Z",
+      "updatedAt": "2026-10-01T09:00:00.000Z"
+    },
+    {
+      "id": "demo-test-1",
+      "revisionId": "demo-revision-1",
+      "userId": "demo-alex",
+      "outcome": "Worked",
+      "setup": "Windows 11 · Bluetooth 5.2 headset",
+      "evidence": "Illustrative successful community test.",
+      "createdAt": "2026-10-01T09:00:00.000Z",
+      "updatedAt": "2026-10-01T09:00:00.000Z"
+    },
+    {
+      "id": "demo-test-2",
+      "revisionId": "demo-revision-2",
+      "userId": "demo-alex",
+      "outcome": "Worked",
+      "setup": "Ubuntu 24.04 · NetworkManager",
+      "evidence": "Illustrative successful community test.",
+      "createdAt": "2026-10-01T09:00:00.000Z",
+      "updatedAt": "2026-10-01T09:00:00.000Z"
+    }
+  ],
+  "verifications": [
+    {
+      "id": "demo-verification-1",
+      "revisionId": "demo-revision-1",
+      "reviewerId": "demo-morgan",
+      "decision": "verified",
+      "evidence": "Illustrative moderator evidence, for demonstration only.",
+      "supportedScope": "Windows 11 · Bluetooth 5.2 headset",
+      "reason": "The demonstration test supports the stated setup.",
+      "createdAt": "2026-10-01T09:00:00.000Z"
+    },
+    {
+      "id": "demo-verification-2",
+      "revisionId": "demo-revision-2",
+      "reviewerId": "demo-morgan",
+      "decision": "verified",
+      "evidence": "Illustrative moderator evidence, for demonstration only.",
+      "supportedScope": "Ubuntu 24.04 · NetworkManager",
+      "reason": "The demonstration test supports the stated setup.",
+      "createdAt": "2026-10-01T09:00:00.000Z"
+    }
+  ],
+  "comments": [
+    {
+      "id": "demo-comment-1",
+      "problemId": "demo-wifi",
+      "authorId": "demo-sam",
+      "body": "Does this also happen on battery power? Please include your driver version so we can compare setups.",
+      "hidden": false,
+      "createdAt": "2026-10-01T09:00:00.000Z"
+    }
+  ],
+  "timeline": [
+    {
+      "id": "demo-event-0",
+      "problemId": "demo-wifi",
+      "actorId": null,
+      "kind": "reported",
+      "fromStatus": null,
+      "toStatus": "Confirmed",
+      "reason": "Illustrative demonstration report.",
+      "createdAt": "2026-10-01T09:00:00.000Z"
+    },
+    {
+      "id": "demo-event-1",
+      "problemId": "demo-display",
+      "actorId": null,
+      "kind": "reported",
+      "fromStatus": null,
+      "toStatus": "Investigating",
+      "reason": "Illustrative demonstration report.",
+      "createdAt": "2026-10-01T09:00:00.000Z"
+    },
+    {
+      "id": "demo-event-2",
+      "problemId": "demo-browser",
+      "actorId": null,
+      "kind": "reported",
+      "fromStatus": null,
+      "toStatus": "Reported",
+      "reason": "Illustrative demonstration report.",
+      "createdAt": "2026-10-01T09:00:00.000Z"
+    },
+    {
+      "id": "demo-event-3",
+      "problemId": "demo-bluetooth",
+      "actorId": null,
+      "kind": "reported",
+      "fromStatus": null,
+      "toStatus": "Partially solved",
+      "reason": "Illustrative demonstration report.",
+      "createdAt": "2026-10-01T09:00:00.000Z"
+    },
+    {
+      "id": "demo-event-4",
+      "problemId": "demo-dns",
+      "actorId": null,
+      "kind": "reported",
+      "fromStatus": null,
+      "toStatus": "Resolved",
+      "reason": "Illustrative demonstration report.",
+      "createdAt": "2026-10-01T09:00:00.000Z"
+    },
+    {
+      "id": "demo-event-5",
+      "problemId": "demo-editor",
+      "actorId": null,
+      "kind": "reported",
+      "fromStatus": null,
+      "toStatus": "Reported",
+      "reason": "Illustrative demonstration report.",
+      "createdAt": "2026-10-01T09:00:00.000Z"
+    }
+  ],
+  "reports": [],
+  "audit": [],
+  "notifications": [],
+  "attachments": [],
+  "limits": []
+}
