@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, rm, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { LocalStore } from '../src/local-store.js';
+import { LocalStore, publishSnapshot } from '../src/local-store.js';
 
 test('simultaneous first reads and a write share the same seed snapshot', async (t) => {
   const dir = await mkdtemp(join(tmpdir(), 'tracker-cold-'));
@@ -34,4 +34,24 @@ test('a damaged snapshot is preserved and can be retried after repair', async (t
   }
   await writeFile(file, JSON.stringify(seed));
   assert.deepEqual(await store.read(), seed);
+});
+
+test('Windows sharing violations retry atomic publication and permanent errors surface', async () => {
+  let attempts = 0;
+  const sharing = Object.assign(new Error('sharing violation'), { code: 'EPERM' });
+  await publishSnapshot(async () => {
+    attempts++;
+    if (attempts < 3) throw sharing;
+  }, 'win32');
+  assert.equal(attempts, 3);
+
+  const full = Object.assign(new Error('disk full'), { code: 'ENOSPC' });
+  await assert.rejects(
+    publishSnapshot(async () => {
+      attempts++;
+      throw full;
+    }, 'win32'),
+    full,
+  );
+  assert.equal(attempts, 4);
 });

@@ -36,7 +36,8 @@ compatible.
 ## Bug fixes
 
 - Simultaneous first use of the local demo shares one seed initialization. Writes sync a temporary
-  file before publication. The loader preserves malformed snapshots and can retry after repair.
+  file before publication and retry transient Windows sharing failures. The loader preserves
+  malformed snapshots and can retry after repair.
 - Production row comparisons ignore JSON object key ordering, preventing spurious upserts.
   Transport errors and indeterminate commit results leave the request failed for review.
 - Verification rejects duplicate destinations in a media manifest before restore can write.

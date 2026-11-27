@@ -1,6 +1,7 @@
 import { link, mkdir, open, readFile, rename, rm } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { setTimeout as delay } from 'node:timers/promises';
 import { prepare_local_commit, valid_snapshot } from '../generated/tracker_core.js';
 import { storageResult, type State, type Store } from './state.js';
 import { seedState } from './seed.js';
@@ -16,6 +17,27 @@ const cleanup = new FinalizationRegistry<{ path: string; ref: WeakRef<FileQueue>
     if (openFiles.get(path) === ref) openFiles.delete(path);
   },
 );
+
+// Windows readers can briefly prevent atomic file publication while they hold the file open.
+export async function publishSnapshot(operation: () => Promise<void>, platform = process.platform) {
+  const delays = [5, 10, 25, 50, 100, 200];
+  for (let attempt = 0; ; attempt++) {
+    try {
+      await operation();
+      return;
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code;
+      const wait = delays[attempt];
+      if (
+        platform !== 'win32' ||
+        wait === undefined ||
+        !['EPERM', 'EACCES', 'EBUSY'].includes(code ?? '')
+      )
+        throw error;
+      await delay(wait);
+    }
+  }
+}
 
 export class LocalStore implements Store {
   readonly demo = true;
@@ -85,9 +107,9 @@ export class LocalStore implements Store {
       }
       if (create) {
         // Exclusive publication avoids replacing state created by another process at startup.
-        await link(temporary, this.file);
+        await publishSnapshot(() => link(temporary, this.file));
       } else {
-        await rename(temporary, this.file);
+        await publishSnapshot(() => rename(temporary, this.file));
       }
     } finally {
       // The target may already be committed. A cleanup failure cannot undo that commit.
