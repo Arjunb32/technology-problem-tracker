@@ -120,6 +120,8 @@ async function compare(leftPath, rightPath) {
     ['/api/v1/solutions/demo-solution-0', undefined, 200],
     ['/api/v1/problems?sort=solved&category=Computers&q=wi%20fi&offset=0', undefined, 200],
     ['/api/v1/problems?sort=garbage', undefined, 422],
+    ['/api/v1/problems?offset=Infinity', undefined, 422],
+    ['/api/v1/problems?offset=-0.5', undefined, 422],
     ['/api/v1/problems', { origin: 'https://untrusted.example' }, 403],
     ['/api/v1/me', { actor: 'demo-alex' }, 200],
     ['/api/v1/me', { actor: 'invalid-fixture-token' }, 401],

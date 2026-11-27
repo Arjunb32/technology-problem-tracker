@@ -53,11 +53,15 @@ fn check(
     issues: &mut Vec<Value>,
     name: &str,
 ) -> Value {
-    let actual = if name == "offset" && input.is_some_and(Value::is_null) {
-        "NaN"
-    } else {
-        kind(input)
-    };
+    if let Some(received @ ("NaN" | "Infinity" | "-Infinity")) = input.and_then(Value::as_str)
+        && name == "offset"
+    {
+        let mut issue = invalid_type(path, "number", received);
+        issue["received"] = json!(received);
+        issues.push(issue);
+        return Value::Null;
+    }
+    let actual = kind(input);
     let value = input.unwrap_or(&Value::Null);
     if let Some(options) = schema["enum"].as_array() {
         if !options.contains(value) {
@@ -180,8 +184,10 @@ fn check(
             if n.fract() != 0.0 {
                 let mut e = invalid_type(path, "int", "number");
                 e["format"] = json!("safeint");
-                issues.push(e)
-            } else if n.abs() > 9_007_199_254_740_991.0 {
+                issues.push(e);
+                return Value::Null;
+            }
+            if n.abs() > 9_007_199_254_740_991.0 {
                 let mut e = if n > 0.0 {
                     json!({"code":"too_big","maximum":9007199254740991i64,"message":"Too big: expected int to be <=9007199254740991"})
                 } else {

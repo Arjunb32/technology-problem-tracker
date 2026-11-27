@@ -258,5 +258,41 @@
         "reason": "a complete reason"
       }
     }
+  },
+  {
+    "schema": "offset",
+    "input": "Infinity",
+    "expected": {
+      "success": false,
+      "error": {
+        "issues": [
+          {
+            "expected": "number",
+            "code": "invalid_type",
+            "received": "Infinity",
+            "path": [],
+            "message": "Invalid input: expected number, received Infinity"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "schema": "offset",
+    "input": -0.5,
+    "expected": {
+      "success": false,
+      "error": {
+        "issues": [
+          {
+            "expected": "int",
+            "format": "safeint",
+            "code": "invalid_type",
+            "path": [],
+            "message": "Invalid input: expected int, received number"
+          }
+        ]
+      }
+    }
   }
 ]

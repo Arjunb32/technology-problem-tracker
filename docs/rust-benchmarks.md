@@ -77,9 +77,9 @@ substantially across runs, so the 12% lower median here is specific to this meas
 
 The final CPU profile still shows serialization and allocation work. The benchmark consumes each
 response, so it also samples JSON parsing in the test client. The final Worker dry run reported
-1,815.99 KiB uploaded and 448.83 KiB gzip, up from 1,655.69 KiB and 297.62 KiB on the original.
-The upload size is separate from the warm request measurements.
+1,816.52 KiB uploaded and 449.00 KiB gzip, up from 1,655.69 KiB and 297.62 KiB on the original.
+The upload size is separate from the warm request measurements. The timing run preceded a feed offset validation fix. The final parity run covers that fix, and the timed detail and write paths are unchanged.
 
-All 22 paired HTTP cases and the report creation retry matched. The retry sent expected versions 0
+All 24 paired HTTP cases and the report creation retry matched. The retry sent expected versions 0
 and 1 after the first commit was rejected. The mock deliberately leaves the original report
 snapshot in place so repetitions do not introduce new rows or hit rate limits.

@@ -129,7 +129,11 @@ export function createApp(service: TrackerService, auth: Authenticator, settings
           rawCategory === undefined ? undefined : schema<string>('category').parse(rawCategory);
         const rawQuery = c.req.query('q');
         const q = rawQuery === undefined ? undefined : schema<string>('query').parse(rawQuery);
-        const offset = schema<number>('offset').parse(Number(c.req.query('offset') ?? 0));
+        const rawOffset = Number(c.req.query('offset') ?? 0);
+        // JSON cannot carry non-finite values. Preserve the original diagnostic at the ABI.
+        const offset = schema<number>('offset').parse(
+          Number.isFinite(rawOffset) ? rawOffset : String(rawOffset),
+        );
         return c.json(await service.feed(user, sort, category, q, offset));
       }
       case 'mergePreview':
