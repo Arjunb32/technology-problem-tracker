@@ -1,5 +1,7 @@
 mod contribution;
 mod moderation;
+pub mod routes;
+pub mod storage;
 mod views;
 
 use chrono::{DateTime, FixedOffset};
@@ -12,10 +14,10 @@ type Row = Value;
 type Result<T> = std::result::Result<T, Failure>;
 
 #[derive(Debug, Serialize)]
-struct Failure {
-    status: u16,
-    code: &'static str,
-    message: &'static str,
+pub struct Failure {
+    pub status: u16,
+    pub code: &'static str,
+    pub message: &'static str,
 }
 fn err(status: u16, code: &'static str, message: &'static str) -> Failure {
     Failure {
@@ -50,9 +52,9 @@ impl Fields for Value {
     }
 }
 
-#[derive(Deserialize, Serialize)]
-struct State {
-    version: u64,
+#[derive(Clone, Deserialize, Serialize)]
+pub struct State {
+    pub version: u64,
     profiles: Vec<Row>,
     problems: Vec<Row>,
     participation: Vec<Row>,
@@ -73,23 +75,20 @@ struct State {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct Request {
-    op: String,
+pub struct Request {
+    pub op: String,
     #[serde(default)]
-    actor: String,
+    pub actor: String,
     #[serde(default)]
-    id: String,
+    pub id: String,
     #[serde(default)]
-    data: Value,
-    now: String,
-    seed: UuidInput,
-    public_url: String,
-    demo: bool,
+    pub data: Value,
+    pub now: String,
+    pub seed: String,
+    pub public_url: String,
+    pub demo: bool,
 }
 
-#[derive(Deserialize)]
-#[serde(transparent)]
-struct UuidInput(String);
 struct Engine {
     state: State,
     actor: String,
@@ -103,7 +102,11 @@ struct Engine {
 impl Engine {
     fn id(&mut self) -> String {
         self.sequence += 1;
-        Uuid::new_v5(&self.seed, &self.sequence.to_be_bytes()).to_string()
+        let bytes = Uuid::new_v5(&self.seed, &self.sequence.to_be_bytes()).into_bytes();
+        // Derive independent identifier bytes from the host's random request namespace.
+        uuid::Builder::from_random_bytes(bytes)
+            .into_uuid()
+            .to_string()
     }
     fn profile(&self, id: &str) -> Result<&Row> {
         self.state
@@ -302,28 +305,21 @@ fn timestamp(s: &str) -> i64 {
         .unwrap_or(i64::MIN)
 }
 
-fn execute(state: &str, request: &str) -> Result<Value> {
-    let invalid = || {
-        err(
-            500,
-            "internal_error",
-            "The saved state or request could not be read.",
-        )
-    };
-    let req: Request = serde_json::from_str(request).map_err(|_| invalid())?;
+pub fn execute(state: State, req: Request) -> Result<(Value, Option<State>)> {
     let mut e = Engine {
-        state: serde_json::from_str(state).map_err(|_| invalid())?,
+        state,
         actor: req.actor,
         ms: timestamp(&req.now),
         now: req.now,
-        seed: Uuid::parse_str(&req.seed.0).map_err(|_| invalid())?,
+        seed: Uuid::parse_str(&req.seed)
+            .map_err(|_| err(500, "internal_error", "Invalid request identifier."))?,
         sequence: 0,
         public_url: req.public_url,
         demo: req.demo,
     };
     let op = req.op.as_str();
     if let Some(value) = e.read(op, &req.id, &req.data)? {
-        return Ok(json!({"value":value}));
+        return Ok((value, None));
     }
     if op != "ensureProfile" {
         e.begin_write()?
@@ -333,14 +329,52 @@ fn execute(state: &str, request: &str) -> Result<Value> {
         None => e.moderate(op, &req.id, &req.data)?,
     };
     e.capacity()?;
-    Ok(json!({"value":value,"state":e.state}))
+    Ok((value, Some(e.state)))
 }
 
 #[wasm_bindgen]
 pub fn dispatch(state: &str, request: &str) -> String {
-    match execute(state, request) {
-        Ok(v) => v,
+    let decode = || {
+        err(
+            500,
+            "internal_error",
+            "The saved state or request could not be read.",
+        )
+    };
+    let result = serde_json::from_str(state)
+        .map_err(|_| decode())
+        .and_then(|state| execute(state, serde_json::from_str(request).map_err(|_| decode())?));
+    match result {
+        Ok((v, Some(state))) => json!({"value":v,"state":state}),
+        Ok((v, None)) => json!({"value":v}),
         Err(e) => json!({"failure":e}),
     }
     .to_string()
+}
+
+/// Serialize read responses once so the host can forward them as JSON.
+#[wasm_bindgen]
+pub fn dispatch_read(state: &str, request: &str) -> std::result::Result<String, JsError> {
+    fn query(state: &str, request: &str) -> Result<Value> {
+        let decode = || {
+            err(
+                500,
+                "internal_error",
+                "The saved state or request could not be read.",
+            )
+        };
+        let req = serde_json::from_str(request).map_err(|_| decode())?;
+        let (value, changed) = execute(serde_json::from_str(state).map_err(|_| decode())?, req)?;
+        if changed.is_some() {
+            return Err(err(
+                500,
+                "internal_error",
+                "This operation requires a write transaction.",
+            ));
+        }
+        Ok(value)
+    }
+    query(state, request)
+        .map(|value| value.to_string())
+        .map_err(|e| JsError::new(&serde_json::to_string(&e).expect("serializable error")))
 }

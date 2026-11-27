@@ -16,3 +16,4 @@ backups/
 
 target/
 apps/api/generated/
+packages/contracts/generated/

@@ -19,6 +19,7 @@ import {
 import { SessionProvider, useSession } from './context';
 import { Avatar, Loading } from './ui';
 import { supabase } from './api';
+import { screenRoutes, sessionRole } from './browser';
 import FeedPage from './pages/Feed';
 import ProblemPage from './pages/Problem';
 import { ProblemFormPage, SolutionFormPage } from './pages/Forms';
@@ -52,10 +53,23 @@ function Layout() {
     window.scrollTo({ top: 0 });
     document.title = 'Technology Problem Tracker — Solve it together';
   }, [location.pathname]);
-  const moderator =
-    !profile?.restricted && (profile?.role === 'moderator' || profile?.role === 'admin');
+  const moderator = sessionRole(profile) === 'moderator';
   const report = () => {
     if (requireUser()) navigate('/report');
+  };
+  const screens = {
+    feed: <FeedPage />,
+    problem: <ProblemPage />,
+    report: <ProblemFormPage />,
+    solution: <SolutionFormPage />,
+    profile: <ProfilePage />,
+    following: <FollowingPage />,
+    notifications: <NotificationsPage />,
+    settings: <SettingsPage />,
+    moderation: <ModerationPage />,
+    auth: <AuthCallback />,
+    rules: <PolicyPage kind="rules" />,
+    privacy: <PolicyPage kind="privacy" />,
   };
   return (
     <div className="app-shell">
@@ -246,20 +260,9 @@ function Layout() {
         )}
         <main id="main-content">
           <Routes>
-            <Route path="/" element={<FeedPage />} />
-            <Route path="/problems/:id" element={<ProblemPage />} />
-            <Route path="/report" element={<ProblemFormPage />} />
-            <Route path="/problems/:id/edit" element={<ProblemFormPage />} />
-            <Route path="/problems/:id/solutions/new" element={<SolutionFormPage />} />
-            <Route path="/solutions/:solutionId/edit" element={<SolutionFormPage />} />
-            <Route path="/profiles/:id" element={<ProfilePage />} />
-            <Route path="/following" element={<FollowingPage />} />
-            <Route path="/notifications" element={<NotificationsPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/moderation" element={<ModerationPage />} />
-            <Route path="/auth/callback" element={<AuthCallback />} />
-            <Route path="/rules" element={<PolicyPage kind="rules" />} />
-            <Route path="/privacy" element={<PolicyPage kind="privacy" />} />
+            {screenRoutes().map(([path, screen]) => (
+              <Route key={path} path={path} element={screens[screen]} />
+            ))}
             <Route
               path="*"
               element={

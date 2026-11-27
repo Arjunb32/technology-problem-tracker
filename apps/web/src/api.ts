@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import type { ApiError } from '@tracker/contracts';
+import { imageOptions, requestPlan, retryPublic, type RequestKind } from './browser';
 
 const url = import.meta.env.VITE_SUPABASE_URL;
 const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -41,9 +42,7 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
   }
   if (
     response.status === 401 &&
-    token &&
-    (!options.method || options.method === 'GET') &&
-    /^\/(config|problems|profiles|solutions)(\/|\?|$)/.test(path)
+    retryPublic(path, response.status, options.method, Boolean(token))
   ) {
     if (!session) localStorage.removeItem('tracker.demoToken');
     headers.delete('Authorization');
@@ -62,7 +61,13 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
     );
   return value as T;
 }
-export const json = (value: unknown) => JSON.stringify(value);
+export function command<T = unknown>(kind: RequestKind, id?: string, data?: unknown) {
+  const plan = requestPlan(kind, id, data);
+  return api<T>(plan.path, {
+    method: plan.method,
+    ...(plan.body !== null && { body: JSON.stringify(plan.body) }),
+  });
+}
 
 export async function apiBlob(path: string): Promise<Blob> {
   const headers = new Headers();
@@ -85,27 +90,24 @@ export async function apiBlob(path: string): Promise<Blob> {
 }
 
 export async function compressImage(file: File): Promise<File> {
-  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type))
-    throw new Error('Choose a JPEG, PNG, or WebP image.');
-  if (file.size > 20 * 1024 * 1024)
-    throw new Error('Choose an image smaller than 20 MB before compression.');
+  const check = imageOptions(file);
+  if (check.error !== undefined) throw new Error(check.error);
   const bitmap = await createImageBitmap(file);
   try {
-    const scale = Math.min(1, 1800 / Math.max(bitmap.width, bitmap.height));
+    const plan = imageOptions(file, bitmap.width, bitmap.height);
+    if (plan.error !== undefined) throw new Error(plan.error);
+    const { width, height, name, mime, qualities, limit } = plan.data;
     const canvas = document.createElement('canvas');
-    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
-    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+    canvas.width = width;
+    canvas.height = height;
     const context = canvas.getContext('2d');
     if (!context) throw new Error('Your browser could not prepare this image.');
     context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-    for (const quality of [0.9, 0.78, 0.65, 0.5, 0.35]) {
+    for (const quality of qualities) {
       const blob = await new Promise<Blob | null>((resolve) =>
-        canvas.toBlob(resolve, 'image/webp', quality),
+        canvas.toBlob(resolve, mime, quality),
       );
-      if (blob && blob.size <= 500 * 1024)
-        return new File([blob], file.name.replace(/\.[^.]+$/, '') + '.webp', {
-          type: 'image/webp',
-        });
+      if (blob && blob.size <= limit) return new File([blob], name, { type: mime });
     }
     throw new Error('This image is still above 500 KB. Crop it or choose a smaller image.');
   } finally {

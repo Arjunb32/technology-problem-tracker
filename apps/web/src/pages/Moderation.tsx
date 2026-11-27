@@ -22,7 +22,8 @@ import {
   type Solution,
   type ModerationReport,
 } from '@tracker/contracts';
-import { api, json } from '../api';
+import { command } from '../api';
+import { sessionRole } from '../browser';
 import { useModalAccessibility } from '../modal';
 import { useSession } from '../context';
 import { AuthPrompt } from './Account';
@@ -47,11 +48,10 @@ type Action =
   | { kind: 'resolve'; report: ModerationReport };
 export default function ModerationPage() {
   const { profile, loading, notice } = useSession();
-  const moderator =
-    !profile?.restricted && (profile?.role === 'moderator' || profile?.role === 'admin');
+  const moderator = sessionRole(profile) === 'moderator';
   const result = useLoad(
-    () => (moderator ? api<ModerationData>('/moderation') : Promise.resolve(null)),
-    [profile?.id],
+    () => (moderator ? command<ModerationData>('moderation') : Promise.resolve(null)),
+    [profile?.id, moderator],
   );
   const [tab, setTab] = useState('review'),
     [action, setAction] = useState<Action | null>(null);
@@ -109,11 +109,7 @@ export default function ModerationPage() {
     setMergeBusy(true);
     setMergeError('');
     try {
-      setPreview(
-        await api<MergePreview>(
-          `/moderation/merge-preview?${new URLSearchParams({ sourceId, targetId })}`,
-        ),
-      );
+      setPreview(await command<MergePreview>('mergePreview', undefined, { sourceId, targetId }));
     } catch (err) {
       setMergeError((err as Error).message);
     } finally {
@@ -124,10 +120,7 @@ export default function ModerationPage() {
     setMergeBusy(true);
     setMergeError('');
     try {
-      await api('/moderation/merge', {
-        method: 'POST',
-        body: json({ sourceId, targetId, reason: mergeReason }),
-      });
+      await command('merge', undefined, { sourceId, targetId, reason: mergeReason });
       setPreview(null);
       setSourceId('');
       setTargetId('');
@@ -663,42 +656,7 @@ function ActionDialog({
     setBusy(true);
     setError('');
     try {
-      if (action.kind === 'verify')
-        await api(`/moderation/solutions/${action.solution.id}/verify`, {
-          method: 'POST',
-          body: json({
-            revisionId: action.solution.currentRevision.id,
-            evidence,
-            supportedScope: scope,
-            reason,
-            decision,
-          }),
-        });
-      else if (action.kind === 'status')
-        await api(`/moderation/problems/${action.problem.id}/status`, {
-          method: 'POST',
-          body: json({ status, reason }),
-        });
-      else if (action.kind === 'restrict')
-        await api(`/moderation/profiles/${action.profile.id}/restrict`, {
-          method: 'POST',
-          body: json({ restricted: !action.profile.restricted, reason }),
-        });
-      else if (action.kind === 'resolve')
-        await api(`/moderation/reports/${action.report.id}/resolve`, {
-          method: 'POST',
-          body: json({ reason }),
-        });
-      else
-        await api('/moderation/content', {
-          method: 'POST',
-          body: json({
-            targetType: action.targetType,
-            targetId: action.targetId,
-            hidden: action.hidden,
-            reason,
-          }),
-        });
+      await command('moderate', undefined, { action, evidence, scope, reason, decision, status });
       notice('Decision saved with its reason in the moderation history.');
       onSaved();
     } catch (err) {

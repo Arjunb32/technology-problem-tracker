@@ -5,13 +5,13 @@
   "packageManager": "pnpm@11.25.0",
   "scripts": {
     "dev": "concurrently -k -n api,web -c cyan,green \"pnpm --filter @tracker/api dev\" \"pnpm --filter @tracker/web dev\"",
-    "build": "pnpm --filter @tracker/web build && pnpm --filter @tracker/api build",
+    "build": "cargo build --release --workspace --locked && pnpm --filter @tracker/web build && pnpm --filter @tracker/api build",
     "typecheck": "pnpm -r typecheck",
-    "test": "pnpm --filter @tracker/api test && node --test scripts/backup.test.mjs && node --test tests/database/*.test.mjs",
+    "test": "cargo test --locked --workspace && pnpm --filter @tracker/api test && cargo build --locked --release -p tracker-backup && node --test scripts/backup.test.mjs && node --test tests/database/*.test.mjs",
     "test:e2e": "playwright test",
-    "check": "pnpm typecheck && pnpm test && pnpm build",
-    "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "check": "cargo fmt --all --check && cargo clippy --locked --workspace --all-targets -- -D warnings && pnpm typecheck && pnpm test && pnpm build",
+    "format": "cargo fmt --all && prettier --write .",
+    "format:check": "cargo fmt --all --check && prettier --check ."
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",

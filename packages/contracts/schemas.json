@@ -1,0 +1,406 @@
+{
+  "problem": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string",
+        "minLength": 10,
+        "maxLength": 180
+      },
+      "description": {
+        "type": "string",
+        "minLength": 30,
+        "maxLength": 12000
+      },
+      "category": {
+        "type": "string",
+        "enum": ["Computers", "Software", "Networking"]
+      },
+      "product": {
+        "type": "string",
+        "minLength": 2,
+        "maxLength": 300
+      },
+      "classification": {
+        "type": "string",
+        "enum": ["Hardware", "Software", "Both"]
+      },
+      "setup": {
+        "default": "",
+        "type": "string",
+        "maxLength": 2000
+      },
+      "symptoms": {
+        "default": "",
+        "type": "string",
+        "maxLength": 12000
+      },
+      "steps": {
+        "default": "",
+        "type": "string",
+        "maxLength": 12000
+      },
+      "attemptedFixes": {
+        "default": "",
+        "type": "string",
+        "maxLength": 12000
+      },
+      "tags": {
+        "default": [],
+        "maxItems": 8,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        }
+      },
+      "affected": {
+        "default": true,
+        "type": "boolean"
+      },
+      "version": {
+        "type": "integer",
+        "exclusiveMinimum": 0,
+        "maximum": 9007199254740991
+      }
+    },
+    "required": ["title", "description", "category", "product", "classification"],
+    "additionalProperties": false
+  },
+  "solution": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string",
+        "minLength": 5,
+        "maxLength": 180
+      },
+      "instructions": {
+        "type": "string",
+        "minLength": 20,
+        "maxLength": 12000
+      },
+      "reasoning": {
+        "default": "",
+        "type": "string",
+        "maxLength": 12000
+      },
+      "supportedSetup": {
+        "type": "string",
+        "minLength": 3,
+        "maxLength": 2000
+      },
+      "limitations": {
+        "default": "",
+        "type": "string",
+        "maxLength": 12000
+      },
+      "warnings": {
+        "default": "",
+        "type": "string",
+        "maxLength": 12000
+      }
+    },
+    "required": ["title", "instructions", "supportedSetup"],
+    "additionalProperties": false
+  },
+  "participation": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "enum": ["affected", "vote", "follow"]
+      },
+      "active": {
+        "type": "boolean"
+      },
+      "setup": {
+        "default": "",
+        "type": "string",
+        "maxLength": 2000
+      }
+    },
+    "required": ["kind", "active"],
+    "additionalProperties": false
+  },
+  "test": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+      "revisionId": {
+        "type": "string",
+        "minLength": 1
+      },
+      "outcome": {
+        "type": "string",
+        "enum": ["Worked", "Did not work", "Partially worked", "Not applicable"]
+      },
+      "setup": {
+        "type": "string",
+        "minLength": 3,
+        "maxLength": 2000
+      },
+      "evidence": {
+        "default": "",
+        "type": "string",
+        "maxLength": 12000
+      }
+    },
+    "required": ["revisionId", "outcome", "setup"],
+    "additionalProperties": false
+  },
+  "verify": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+      "revisionId": {
+        "type": "string",
+        "minLength": 1
+      },
+      "evidence": {
+        "type": "string",
+        "minLength": 10,
+        "maxLength": 12000
+      },
+      "supportedScope": {
+        "type": "string",
+        "minLength": 3,
+        "maxLength": 2000
+      },
+      "reason": {
+        "type": "string",
+        "minLength": 10,
+        "maxLength": 2000
+      },
+      "decision": {
+        "type": "string",
+        "enum": ["verified", "revoked"]
+      }
+    },
+    "required": ["revisionId", "evidence", "supportedScope", "reason", "decision"],
+    "additionalProperties": false
+  },
+  "status": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+      "status": {
+        "type": "string",
+        "enum": [
+          "Reported",
+          "Needs information",
+          "Confirmed",
+          "Investigating",
+          "Partially solved",
+          "Resolved",
+          "Reopened",
+          "Duplicate",
+          "Closed"
+        ]
+      },
+      "reason": {
+        "type": "string",
+        "minLength": 10,
+        "maxLength": 2000
+      }
+    },
+    "required": ["status", "reason"],
+    "additionalProperties": false
+  },
+  "report": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+      "targetType": {
+        "type": "string",
+        "enum": ["problem", "solution", "comment", "profile"]
+      },
+      "targetId": {
+        "type": "string",
+        "minLength": 1
+      },
+      "reason": {
+        "type": "string",
+        "minLength": 3,
+        "maxLength": 100
+      },
+      "details": {
+        "type": "string",
+        "minLength": 10,
+        "maxLength": 4000
+      }
+    },
+    "required": ["targetType", "targetId", "reason", "details"],
+    "additionalProperties": false
+  },
+  "profile": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+      "displayName": {
+        "type": "string",
+        "minLength": 2,
+        "maxLength": 80
+      },
+      "username": {
+        "type": "string",
+        "pattern": "^[a-zA-Z0-9_-]{3,30}$"
+      },
+      "bio": {
+        "type": "string",
+        "maxLength": 600
+      },
+      "expertise": {
+        "maxItems": 8,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        }
+      }
+    },
+    "required": ["displayName", "username", "bio", "expertise"],
+    "additionalProperties": false
+  },
+  "comment": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+      "body": {
+        "type": "string",
+        "minLength": 2,
+        "maxLength": 5000
+      }
+    },
+    "required": ["body"],
+    "additionalProperties": false
+  },
+  "hide": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+      "targetType": {
+        "type": "string",
+        "enum": ["problem", "solution", "comment"]
+      },
+      "targetId": {
+        "type": "string",
+        "minLength": 1
+      },
+      "hidden": {
+        "type": "boolean"
+      },
+      "reason": {
+        "type": "string",
+        "minLength": 10,
+        "maxLength": 2000
+      }
+    },
+    "required": ["targetType", "targetId", "hidden", "reason"],
+    "additionalProperties": false
+  },
+  "restrict": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+      "restricted": {
+        "type": "boolean"
+      },
+      "reason": {
+        "type": "string",
+        "minLength": 10,
+        "maxLength": 2000
+      }
+    },
+    "required": ["restricted", "reason"],
+    "additionalProperties": false
+  },
+  "merge": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+      "sourceId": {
+        "type": "string",
+        "minLength": 1
+      },
+      "targetId": {
+        "type": "string",
+        "minLength": 1
+      },
+      "reason": {
+        "type": "string",
+        "minLength": 10,
+        "maxLength": 2000
+      }
+    },
+    "required": ["sourceId", "targetId", "reason"],
+    "additionalProperties": false
+  },
+  "reason": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+      "reason": {
+        "type": "string",
+        "minLength": 10,
+        "maxLength": 2000
+      }
+    },
+    "required": ["reason"],
+    "additionalProperties": false
+  },
+  "demo": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+      "userId": {
+        "type": "string",
+        "enum": ["demo-alex", "demo-sam", "demo-morgan"]
+      }
+    },
+    "required": ["userId"],
+    "additionalProperties": false
+  },
+  "read": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+      "read": {
+        "type": "boolean",
+        "const": true
+      }
+    },
+    "required": ["read"],
+    "additionalProperties": false
+  },
+  "sort": {
+    "type": "string",
+    "enum": ["trending", "affected", "unsolved", "solved", "new"]
+  },
+  "category": {
+    "type": "string",
+    "enum": ["Computers", "Software", "Networking"]
+  },
+  "query": {
+    "type": "string",
+    "maxLength": 180
+  },
+  "offset": {
+    "type": "integer",
+    "minimum": 0,
+    "maximum": 500
+  },
+  "attachmentType": {
+    "type": "string",
+    "enum": ["problem", "solution"]
+  },
+  "identifier": {
+    "type": "string",
+    "minLength": 1
+  }
+}

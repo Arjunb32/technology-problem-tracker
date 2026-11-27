@@ -18,7 +18,7 @@ Discuss larger changes before implementation so the owner and contributors can a
 
 ## Run the project
 
-Install Node.js 24 and the pnpm version pinned in `package.json`, then run:
+Install the Rust and Node toolchains from the [README](README.md), then run:
 
 ```sh
 pnpm install --frozen-lockfile
@@ -31,7 +31,7 @@ Open `http://127.0.0.1:5173`. The local demo includes member and moderator ident
 
 Create a branch from the repository's default branch, using a descriptive name such as `feature/problem-filters` or `fix/solution-revisions`. Keep each pull request focused. Include what changed, the reason, how it was checked, and screenshots for visible changes. Request review before merging.
 
-Use the shared schemas and types in `packages/contracts` for API changes. Update the website, backend validation, and OpenAPI description together. Preserve ownership checks, account restrictions, moderation permissions, and the database's denial of direct browser access.
+Use the JSON schemas and TypeScript types in `packages/contracts` for API changes. Rust implements validation for both the website and API. Update the shared schema and OpenAPI description together. Preserve ownership checks, account restrictions, moderation permissions, and the database's denial of direct browser access.
 
 Add a new migration for changes to a database migration already applied to a hosted project. Explain its compatibility and data impact. Exercise constraints and transaction behavior in the PostgreSQL tests; never use live community data as a test fixture.
 

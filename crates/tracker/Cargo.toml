@@ -8,9 +8,9 @@ publish.workspace = true
 crate-type = ["cdylib","rlib"]
 
 [dependencies]
+base64 = "0.22"
 chrono.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 uuid = { workspace = true, features = ["v5"] }
 wasm-bindgen = "=0.2.130"
-

@@ -1,8 +1,9 @@
+import { http_route } from '../generated/tracker_core.js';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { secureHeaders } from 'hono/secure-headers';
 import { bodyLimit } from 'hono/body-limit';
-import { z } from 'zod';
+import { ContractError, schema } from '@tracker/contracts';
 import type { Profile, FeedSort } from '@tracker/contracts';
 import { ApiFailure, fail } from './state.js';
 import { TrackerService } from './service.js';
@@ -69,8 +70,6 @@ export function createApp(service: TrackerService, auth: Authenticator, settings
     c.set('actor', actor);
     await next();
   });
-  const actor = (c: { get: (key: 'actor') => Profile | null }) =>
-    c.get('actor')?.id ?? fail(401, 'unauthorized', 'Please sign in to continue.');
   const json = async (c: { req: { json: () => Promise<unknown> } }) => {
     try {
       return await c.req.json();
@@ -78,149 +77,102 @@ export function createApp(service: TrackerService, auth: Authenticator, settings
       fail(400, 'invalid_json', 'Send a valid JSON request.');
     }
   };
-  app.get('/health', async (c) => {
-    if (settings.health) await settings.health();
-    return c.json({ status: 'ok', mode: settings.demo ? 'local-demo' : 'production' });
+  app.all('*', async (c) => {
+    const method = c.req.method === 'HEAD' ? 'GET' : c.req.method;
+    const route = JSON.parse(http_route(method, c.req.path, settings.demo)) as {
+      op: string;
+      id: string;
+      private: boolean;
+      schema: string | null;
+      status: 200 | 201;
+    } | null;
+    if (!route)
+      return c.json({ error: 'not_found', message: 'This endpoint does not exist.' }, 404);
+    const user = c.get('actor')?.id ?? null;
+    const requireActor = () => user ?? fail(401, 'unauthorized', 'Please sign in to continue.');
+    const checksBodyFirst = route.op === 'markNotification' || route.op === 'upload';
+    if (route.private && !checksBodyFirst) requireActor();
+    let id = route.id;
+    try {
+      id = decodeURIComponent(id);
+    } catch {
+      /* Leave malformed URI escapes as path data. */
+    }
+    const data = route.schema
+      ? schema<Record<string, unknown>>(route.schema).parse(await json(c))
+      : {};
+    if (route.op === 'markNotification') requireActor();
+    switch (route.op) {
+      case 'health':
+        if (settings.health) await settings.health();
+        return c.json({ status: 'ok', mode: settings.demo ? 'local-demo' : 'production' });
+      case 'config':
+        return c.json({
+          demo: settings.demo,
+          configuredAuth: settings.configuredAuth,
+          providers: ['google', 'github', 'azure'],
+          demoAccounts: settings.demo ? demoProfiles : [],
+        });
+      case 'openapi':
+        return c.json(openapi(settings.demo));
+      case 'demo':
+        return c.json({
+          token: 'demo:' + data.userId,
+          profile: await service.me(String(data.userId)),
+        });
+      case 'me':
+        return c.json(await service.me(user!));
+      case 'feed': {
+        const sort = schema<FeedSort>('sort').parse(c.req.query('sort') ?? 'trending');
+        const rawCategory = c.req.query('category');
+        const category =
+          rawCategory === undefined ? undefined : schema<string>('category').parse(rawCategory);
+        const rawQuery = c.req.query('q');
+        const q = rawQuery === undefined ? undefined : schema<string>('query').parse(rawQuery);
+        const offset = schema<number>('offset').parse(Number(c.req.query('offset') ?? 0));
+        return c.json(await service.feed(user, sort, category, q, offset));
+      }
+      case 'mergePreview':
+        return c.json(
+          await service.mergePreview(
+            user!,
+            schema<string>('identifier').parse(c.req.query('sourceId')),
+            schema<string>('identifier').parse(c.req.query('targetId')),
+          ),
+        );
+      case 'image': {
+        const image = await service.image(id, user);
+        return new Response(image.bytes as Uint8Array<ArrayBuffer>, {
+          headers: {
+            'Content-Type': image.mime,
+            'X-Content-Type-Options': 'nosniff',
+            'Content-Security-Policy': "default-src 'none'",
+            'Cache-Control': 'private, max-age=60',
+          },
+        });
+      }
+      case 'upload': {
+        const form = await c.req.parseBody();
+        const type = schema<'problem' | 'solution'>('attachmentType').parse(form.targetType);
+        const target = schema<string>('identifier').parse(form.targetId);
+        if (!(form.file instanceof File)) fail(422, 'invalid_upload', 'Choose an image to upload.');
+        return c.json(await service.upload(requireActor(), type, target, form.file), 201);
+      }
+      case 'deleteImage':
+        return c.json(await service.deleteImage(user!, id));
+      default:
+        if (method === 'GET')
+          return c.body(await service.readBody(route.op, user, id), 200, {
+            'Content-Type': 'application/json',
+          });
+        return c.json(
+          (await service.executeWrite(route.op, requireActor(), id, data)) as object,
+          route.status,
+        );
+    }
   });
-  app.get('/api/v1/config', (c) =>
-    c.json({
-      demo: settings.demo,
-      configuredAuth: settings.configuredAuth,
-      providers: ['google', 'github', 'azure'],
-      demoAccounts: settings.demo ? demoProfiles : [],
-    }),
-  );
-  app.get('/api/v1/openapi.json', (c) => c.json(openapi(settings.demo)));
-  if (settings.demo)
-    app.post('/api/v1/auth/demo', async (c) => {
-      const { userId } = z
-        .object({ userId: z.enum(['demo-alex', 'demo-sam', 'demo-morgan']) })
-        .strict()
-        .parse(await json(c));
-      const profile = await service.me(userId);
-      return c.json({ token: `demo:${userId}`, profile });
-    });
-  app.get('/api/v1/me', async (c) => c.json(await service.me(actor(c))));
-  app.patch('/api/v1/me', async (c) =>
-    c.json(await service.updateProfile(actor(c), await json(c))),
-  );
-  app.get('/api/v1/me/notifications', async (c) => c.json(await service.notifications(actor(c))));
-  app.patch('/api/v1/me/notifications/:id', async (c) => {
-    z.object({ read: z.literal(true) })
-      .strict()
-      .parse(await json(c));
-    return c.json(await service.markNotification(actor(c), c.req.param('id')));
-  });
-  app.patch('/api/v1/notifications/:id', async (c) => {
-    z.object({ read: z.literal(true) })
-      .strict()
-      .parse(await json(c));
-    return c.json(await service.markNotification(actor(c), c.req.param('id')));
-  });
-  app.get('/api/v1/me/following', async (c) => c.json(await service.following(actor(c))));
-  app.get('/api/v1/profiles/:id', async (c) =>
-    c.json(await service.publicProfile(c.req.param('id'), c.get('actor')?.id ?? null)),
-  );
-  app.get('/api/v1/problems', async (c) => {
-    const sort = z
-      .enum(['trending', 'affected', 'unsolved', 'solved', 'new'])
-      .default('trending')
-      .parse(c.req.query('sort')) as FeedSort;
-    const category = z
-      .enum(['Computers', 'Software', 'Networking'])
-      .optional()
-      .parse(c.req.query('category'));
-    const q = z.string().trim().max(180).optional().parse(c.req.query('q'));
-    const offset = z.coerce.number().int().min(0).max(500).default(0).parse(c.req.query('offset'));
-    return c.json(await service.feed(c.get('actor')?.id ?? null, sort, category, q, offset));
-  });
-  app.get('/api/v1/problems/:id', async (c) =>
-    c.json(await service.detail(c.req.param('id'), c.get('actor')?.id ?? null)),
-  );
-  app.post('/api/v1/problems', async (c) =>
-    c.json(await service.createProblem(actor(c), await json(c)), 201),
-  );
-  app.patch('/api/v1/problems/:id', async (c) =>
-    c.json(await service.editProblem(actor(c), c.req.param('id'), await json(c))),
-  );
-  app.put('/api/v1/problems/:id/participation', async (c) =>
-    c.json(await service.participate(actor(c), c.req.param('id'), await json(c))),
-  );
-  app.post('/api/v1/problems/:id/comments', async (c) =>
-    c.json(await service.comment(actor(c), c.req.param('id'), await json(c)), 201),
-  );
-  app.post('/api/v1/problems/:id/solutions', async (c) =>
-    c.json(await service.addSolution(actor(c), c.req.param('id'), await json(c)), 201),
-  );
-  app.patch('/api/v1/solutions/:id', async (c) =>
-    c.json(await service.editSolution(actor(c), c.req.param('id'), await json(c))),
-  );
-  app.get('/api/v1/solutions/:id', async (c) =>
-    c.json(await service.getSolution(c.req.param('id'), c.get('actor')?.id ?? null)),
-  );
-  app.put('/api/v1/solutions/:id/tests', async (c) =>
-    c.json(await service.test(actor(c), c.req.param('id'), await json(c))),
-  );
-  app.post('/api/v1/reports', async (c) =>
-    c.json(await service.report(actor(c), await json(c)), 201),
-  );
-  app.post('/api/v1/problems/:id/reopen', async (c) =>
-    c.json(await service.reopen(actor(c), c.req.param('id'), await json(c)), 201),
-  );
-  app.post('/api/v1/attachments', async (c) => {
-    const body = await c.req.parseBody();
-    const targetType = z.enum(['problem', 'solution']).parse(body.targetType);
-    const targetId = z.string().min(1).parse(body.targetId);
-    if (!(body.file instanceof File)) fail(422, 'invalid_upload', 'Choose an image to upload.');
-    return c.json(await service.upload(actor(c), targetType, targetId, body.file), 201);
-  });
-  app.get('/api/v1/attachments/:id', async (c) => {
-    const image = await service.image(c.req.param('id'), c.get('actor')?.id ?? null);
-    return new Response(image.bytes as Uint8Array<ArrayBuffer>, {
-      headers: {
-        'Content-Type': image.mime,
-        'X-Content-Type-Options': 'nosniff',
-        'Content-Security-Policy': "default-src 'none'",
-        'Cache-Control': 'private, max-age=60',
-      },
-    });
-  });
-  app.delete('/api/v1/attachments/:id', async (c) =>
-    c.json(await service.deleteImage(actor(c), c.req.param('id'))),
-  );
-  app.get('/api/v1/moderation', async (c) => c.json(await service.moderation(actor(c))));
-  app.post('/api/v1/moderation/solutions/:id/verify', async (c) =>
-    c.json(await service.verify(actor(c), c.req.param('id'), await json(c))),
-  );
-  app.post('/api/v1/moderation/problems/:id/status', async (c) =>
-    c.json(await service.status(actor(c), c.req.param('id'), await json(c))),
-  );
-  app.post('/api/v1/moderation/content', async (c) =>
-    c.json(await service.hide(actor(c), await json(c))),
-  );
-  app.post('/api/v1/moderation/profiles/:id/restrict', async (c) =>
-    c.json(await service.restrict(actor(c), c.req.param('id'), await json(c))),
-  );
-  app.get('/api/v1/moderation/merge-preview', async (c) =>
-    c.json(
-      await service.mergePreview(
-        actor(c),
-        z.string().min(1).parse(c.req.query('sourceId')),
-        z.string().min(1).parse(c.req.query('targetId')),
-      ),
-    ),
-  );
-  app.post('/api/v1/moderation/merge', async (c) =>
-    c.json(await service.merge(actor(c), await json(c))),
-  );
-  app.post('/api/v1/moderation/reports/:id/resolve', async (c) =>
-    c.json(await service.resolveReport(actor(c), c.req.param('id'), await json(c))),
-  );
-  app.notFound((c) =>
-    c.json({ error: 'not_found', message: 'This endpoint does not exist.' }, 404),
-  );
   app.onError((error, c) => {
-    if (error instanceof z.ZodError)
+    if (error instanceof ContractError)
       return c.json(
         {
           error: 'validation_error',

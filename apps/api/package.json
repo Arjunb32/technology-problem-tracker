@@ -7,13 +7,16 @@
     "dev": "node --watch --import tsx src/local.ts",
     "build": "wrangler deploy --dry-run --outdir dist",
     "typecheck": "tsc -p tsconfig.json",
-    "test": "tsx --test test/*.test.ts"
+    "test": "node --import ./src/node-runtime.mjs --import tsx --test test/*.test.ts",
+    "predev": "node ../../scripts/build-core.mjs",
+    "pretest": "node ../../scripts/build-core.mjs",
+    "prebuild": "node ../../scripts/build-core.mjs",
+    "pretypecheck": "node ../../scripts/build-core.mjs"
   },
   "dependencies": {
     "@tracker/contracts": "workspace:*",
     "@supabase/supabase-js": "^2.117.2",
-    "hono": "^4.13.13",
-    "zod": "^4.6.5"
+    "hono": "^4.13.13"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",

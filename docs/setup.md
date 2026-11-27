@@ -2,7 +2,7 @@
 
 ## Local development
 
-Use the Node and pnpm versions described in the root README. Run `pnpm install`, then `pnpm dev`. The website listens on port 5173 and the local API on port 8787.
+Install the Rust, WebAssembly, Node and pnpm prerequisites from the root README. Run `pnpm install --frozen-lockfile`, then `pnpm dev`. The website listens on port 5173 and the local API on port 8787.
 
 The unconfigured development setup uses local demo data and development identities. This is intentionally different from hosted authentication. Keep it bound to loopback. Do not publish the development server or use demo accounts as evidence that OAuth is working.
 
@@ -64,7 +64,7 @@ Confirm exactly one intended row changed and that the moderator workspace become
 
 Run `pnpm check` and the browser journeys before packaging. The GitHub checks workflow performs validation only; it has no deployment secrets or deployment job.
 
-For the backend, use `apps/api` as the Worker project with its Wrangler configuration. Add the server-only secret through Cloudflare secret settings, then configure the non-secret variables above. The API build is a deployment dry run. After the owner has reviewed the working result and authorized public deployment, run `pnpm --filter @tracker/api exec wrangler deploy` from the repository root.
+For the backend, use `apps/api` as the Worker project with its Wrangler configuration. Add the server-only secret through Cloudflare secret settings, then configure the non-secret variables above. The API build compiles the locked Rust WebAssembly release package and runs a Wrangler deployment dry run. After the owner has reviewed the working result and authorized public deployment, run `pnpm --filter @tracker/api exec wrangler deploy` from the repository root.
 
 For the website, configure Cloudflare Pages with repository root as the project root, `pnpm --filter @tracker/web build` as the build command, and `apps/web/dist` as the output folder. Configure only the public website environment values. Ensure deep links such as a problem URL route to the SPA. Use a provider subdomain and the Free plan; do not add a purchased domain or a paid feature.
 

@@ -1,7 +1,8 @@
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
 import { X, Github, CircleUserRound, CheckCircle2, AlertCircle } from 'lucide-react';
 import type { AppConfig, Profile } from '@tracker/contracts';
-import { api, json, supabase, ApiFailure } from './api';
+import { command, supabase, ApiFailure } from './api';
+import { oauthOptions, sessionRole } from './browser';
 import { useModalAccessibility } from './modal';
 
 type Notice = { message: string; type: 'success' | 'error' | 'info' };
@@ -40,7 +41,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       return;
     }
     try {
-      setProfile(await api<Profile>('/me'));
+      setProfile(await command<Profile>('me'));
     } catch (error) {
       if (error instanceof ApiFailure && error.status === 401) {
         localStorage.removeItem('tracker.demoToken');
@@ -52,7 +53,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const result = await api<AppConfig>('/config');
+      const result = await command<AppConfig>('config');
       setConfig(result);
       await refreshProfile();
     } catch (error) {
@@ -89,10 +90,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setBusy(true);
     setLoginError('');
     try {
-      const result = await api<{ token: string; profile: Profile }>('/auth/demo', {
-        method: 'POST',
-        body: json({ userId }),
-      });
+      const result = await command<{ token: string; profile: Profile }>('demo', undefined, userId);
       localStorage.setItem('tracker.demoToken', result.token);
       setProfile(result.profile);
       setLogin(false);
@@ -113,10 +111,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setLoginError('');
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-        ...(provider === 'azure' ? { scopes: 'email' } : {}),
-      },
+      options: oauthOptions(window.location.origin, provider),
     });
     if (error) {
       setLoginError(error.message);
@@ -124,11 +119,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     }
   }
   const requireUser = () => {
-    if (!profile) {
+    const role = sessionRole(profile);
+    if (role === 'guest') {
       setLogin(true);
       return false;
     }
-    if (profile.restricted) {
+    if (role === 'restricted') {
       notice(
         'Your account is restricted from contributing. Contact a moderator for help.',
         'error',

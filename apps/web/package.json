@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 5173",
     "build": "tsc -b && vite build",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prebuild": "node ../../scripts/build-core.mjs --contracts",
+    "predev": "node ../../scripts/build-core.mjs --contracts",
+    "pretypecheck": "node ../../scripts/build-core.mjs --contracts"
   },
   "dependencies": {
     "@tracker/contracts": "workspace:*",

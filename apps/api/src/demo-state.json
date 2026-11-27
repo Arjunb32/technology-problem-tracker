@@ -6,10 +6,7 @@
       "username": "alexchen",
       "displayName": "Alex Chen",
       "bio": "Curious about the things that make technology work.",
-      "expertise": [
-        "Windows",
-        "Hardware"
-      ],
+      "expertise": ["Windows", "Hardware"],
       "role": "member",
       "restricted": false,
       "createdAt": "2026-10-01T09:00:00.000Z"
@@ -19,10 +16,7 @@
       "username": "samrivera",
       "displayName": "Sam Rivera",
       "bio": "Software tinkerer. Testing fixes and sharing what works.",
-      "expertise": [
-        "Linux",
-        "Networking"
-      ],
+      "expertise": ["Linux", "Networking"],
       "role": "member",
       "restricted": false,
       "createdAt": "2026-10-01T09:00:00.000Z"
@@ -32,9 +26,7 @@
       "username": "morganlee",
       "displayName": "Morgan Lee",
       "bio": "Community moderator. Evidence makes better answers.",
-      "expertise": [
-        "Troubleshooting"
-      ],
+      "expertise": ["Troubleshooting"],
       "role": "admin",
       "restricted": false,
       "createdAt": "2026-10-01T09:00:00.000Z"
@@ -49,11 +41,7 @@
       "symptoms": "Connected, no internet. Repeats after wake.",
       "steps": "Put the laptop to sleep for 10 minutes, wake it, then stream a video.",
       "attemptedFixes": "Restarted the router and reinstalled the current Wi-Fi driver.",
-      "tags": [
-        "Wi-Fi",
-        "Windows 11",
-        "Sleep mode"
-      ],
+      "tags": ["Wi-Fi", "Windows 11", "Sleep mode"],
       "status": "Confirmed",
       "canonicalId": null,
       "hidden": false,
@@ -75,11 +63,7 @@
       "symptoms": "",
       "steps": "",
       "attemptedFixes": "",
-      "tags": [
-        "USB-C",
-        "Display",
-        "Hardware"
-      ],
+      "tags": ["USB-C", "Display", "Hardware"],
       "status": "Investigating",
       "canonicalId": null,
       "hidden": false,
@@ -101,11 +85,7 @@
       "symptoms": "",
       "steps": "",
       "attemptedFixes": "",
-      "tags": [
-        "Browser",
-        "Memory",
-        "Linux"
-      ],
+      "tags": ["Browser", "Memory", "Linux"],
       "status": "Reported",
       "canonicalId": null,
       "hidden": false,
@@ -127,10 +107,7 @@
       "symptoms": "",
       "steps": "",
       "attemptedFixes": "",
-      "tags": [
-        "Bluetooth",
-        "Audio"
-      ],
+      "tags": ["Bluetooth", "Audio"],
       "status": "Partially solved",
       "canonicalId": null,
       "hidden": false,
@@ -152,11 +129,7 @@
       "symptoms": "",
       "steps": "",
       "attemptedFixes": "",
-      "tags": [
-        "DNS",
-        "Linux",
-        "Networking"
-      ],
+      "tags": ["DNS", "Linux", "Networking"],
       "status": "Resolved",
       "canonicalId": null,
       "hidden": false,
@@ -178,10 +151,7 @@
       "symptoms": "",
       "steps": "",
       "attemptedFixes": "",
-      "tags": [
-        "Developer tools",
-        "Performance"
-      ],
+      "tags": ["Developer tools", "Performance"],
       "status": "Reported",
       "canonicalId": null,
       "hidden": false,

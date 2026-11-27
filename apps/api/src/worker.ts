@@ -48,10 +48,14 @@ export function productionApp(env: Bindings) {
     },
   });
 }
+// Cloudflare reuses the bindings object within an isolate. Reuse its immutable router and SDK client.
+const instances=new WeakMap<Bindings,ReturnType<typeof productionApp>>();
 export default {
   fetch: async (request: Request, env: Bindings) => {
     try {
-      return await productionApp(env).fetch(request);
+      let app=instances.get(env);
+      if(!app){app=productionApp(env);instances.set(env,app)}
+      return await app.fetch(request);
     } catch {
       return Response.json(
         { error: 'unconfigured', message: 'The platform is not configured yet.' },

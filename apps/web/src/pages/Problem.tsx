@@ -27,7 +27,8 @@ import {
   type SolutionRevision,
   type TestOutcome,
 } from '@tracker/contracts';
-import { api, json } from '../api';
+import { command } from '../api';
+import { sessionRole } from '../browser';
 import { useModalAccessibility } from '../modal';
 import { useSession } from '../context';
 import {
@@ -50,9 +51,13 @@ import {
 
 export default function ProblemPage() {
   const { id } = useParams();
+  return <ProblemDetailPage key={id} id={id} />;
+}
+
+function ProblemDetailPage({ id }: { id?: string }) {
   const navigate = useNavigate();
   const { profile, requireUser, notice } = useSession();
-  const result = useLoad(() => api<ProblemDetail>(`/problems/${id}`), [id, profile?.id]);
+  const result = useLoad(() => command<ProblemDetail>('detail', id), [id, profile?.id]);
   const [affectedDialog, setAffectedDialog] = useState(false),
     [setup, setSetup] = useState(''),
     [participating, setParticipating] = useState(''),
@@ -82,9 +87,10 @@ export default function ProblemPage() {
     setParticipating(kind);
     setPartError('');
     try {
-      const problem = await api<Problem>(`/problems/${id}/participation`, {
-        method: 'PUT',
-        body: json({ kind, active, setup: customSetup }),
+      const problem = await command<Problem>('participate', id, {
+        kind,
+        active,
+        setup: customSetup,
       });
       result.setData((previous) => (previous ? { ...previous, problem } : previous));
       setAffectedDialog(false);
@@ -115,7 +121,7 @@ export default function ProblemPage() {
     setCommentBusy(true);
     setCommentError('');
     try {
-      await api(`/problems/${id}/comments`, { method: 'POST', body: json({ body: comment.body }) });
+      await command('comment', id, { body: comment.body });
       setComment({ body: '' });
       clearComment();
       result.reload();
@@ -131,7 +137,7 @@ export default function ProblemPage() {
     setReopenBusy(true);
     setReopenError('');
     try {
-      await api(`/problems/${id}/reopen`, { method: 'POST', body: json({ reason }) });
+      await command('reopen', id, { reason });
       setReopen(false);
       setReason('');
       result.reload();
@@ -147,7 +153,7 @@ export default function ProblemPage() {
   if (!result.data) return null;
   const { problem, solutions, comments, timeline, related } = result.data;
   const isOwner = profile?.id === problem.authorId;
-  const canWrite = !!profile && !profile.restricted;
+  const canWrite = ['member', 'moderator'].includes(sessionRole(profile));
   return (
     <div className="detail-page">
       <Breadcrumb current="Problem" />
@@ -603,10 +609,7 @@ function SolutionCard({ solution, refresh }: { solution: Solution; refresh: () =
     setBusy(true);
     setError('');
     try {
-      await api(`/solutions/${solution.id}/tests`, {
-        method: 'PUT',
-        body: json({ revisionId: revision.id, outcome, setup, evidence }),
-      });
+      await command('test', solution.id, { revisionId: revision.id, outcome, setup, evidence });
       setTestOpen(false);
       refresh();
       notice('Your test result is recorded for this revision.');

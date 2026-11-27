@@ -1,5 +1,5 @@
 use super::*;
-use std::cmp::Reverse;
+use std::{cmp::Reverse, collections::HashMap};
 impl Engine {
     fn public_profile(&self, id: &str) -> Result<Row> {
         let p = self.profile(id)?;
@@ -219,22 +219,38 @@ impl Engine {
                     continue;
                 }
             }
-            items.push(self.present(p)?);
+            items.push(p);
         }
+        let mut rank = HashMap::<&str, [usize; 2]>::new();
+        if matches!(sort, "affected" | "trending") {
+            let cutoff = self.ms.saturating_sub(7 * 86_400_000);
+            for row in &self.state.participation {
+                let slot = match (sort, row.text("kind")) {
+                    ("affected", "affected") => 0,
+                    ("trending", "affected") if timestamp(row.text("createdAt")) >= cutoff => 0,
+                    ("trending", "vote") if timestamp(row.text("createdAt")) >= cutoff => 1,
+                    _ => continue,
+                };
+                rank.entry(row.text("problemId")).or_default()[slot] += 1;
+            }
+        }
+        let ranking = |row: &Row| rank.get(row.text("id")).copied().unwrap_or_default();
         items.sort_by(|a, b| match sort {
-            "affected" => b.num("affectedCount").cmp(&a.num("affectedCount")),
-            "trending" => b
-                .num("recentAffectedCount")
-                .cmp(&a.num("recentAffectedCount"))
-                .then_with(|| b.num("recentVoteCount").cmp(&a.num("recentVoteCount")))
+            "affected" => ranking(b).cmp(&ranking(a)),
+            "trending" => ranking(b)
+                .cmp(&ranking(a))
                 .then_with(|| b.text("createdAt").cmp(a.text("createdAt"))),
             "solved" => b.text("resolvedAt").cmp(a.text("resolvedAt")),
             _ => b.text("createdAt").cmp(a.text("createdAt")),
         });
         let total = items.len();
-        Ok(
-            json!({"total":total,"items":items.into_iter().skip(d.num("offset") as usize).take(50).collect::<Vec<_>>()}),
-        )
+        let page = items
+            .into_iter()
+            .skip(d.num("offset") as usize)
+            .take(50)
+            .map(|p| self.present(p))
+            .collect::<Result<Vec<_>>>()?;
+        Ok(json!({"items":page,"total":total}))
     }
     pub(super) fn read(&self, op: &str, id: &str, d: &Row) -> Result<Option<Row>> {
         let s = &self.state;

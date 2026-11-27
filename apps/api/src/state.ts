@@ -96,7 +96,9 @@ export function emptyState(): State {
 }
 export interface Store {
   demo: boolean;
+  readJson?(problemId?: string): Promise<string>;
   read(problemId?: string): Promise<State>;
+  command?<T>(requestJson: string): Promise<T>;
   transaction<T>(fn: (state: State) => T): Promise<T>;
   search?(query: string): Promise<string[]>;
   putImage?(path: string, bytes: Uint8Array, mime: string): Promise<void>;
@@ -125,4 +127,12 @@ export function id() {
 }
 export function isModerator(p: Profile | null | undefined) {
   return !!p && !p.restricted && (p.role === 'moderator' || p.role === 'admin');
+}
+export function storageResult<T>(json: string): T {
+  const result = JSON.parse(json);
+  if (result?.failure) {
+    const { status, code, message } = result.failure;
+    throw new ApiFailure(status, code, message);
+  }
+  return result as T;
 }

@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/backup", "crates/tracker"]
+members = ["crates/backup", "crates/tracker", "crates/contracts"]
 
 [workspace.package]
 version = "0.1.0"
@@ -12,4 +12,3 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 chrono = { version = "0.4", default-features = false, features = ["std"] }
 uuid = "1"
-

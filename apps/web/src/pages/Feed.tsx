@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { categories, type FeedResult, type FeedSort } from '@tracker/contracts';
 import { api } from '../api';
+import { feedOptions } from '../browser';
 import { useSession } from '../context';
 import { useLoad, Loading, ErrorState, Empty, ProblemCard } from '../ui';
 
@@ -27,22 +28,10 @@ const tabs: { id: FeedSort; label: string; icon: typeof Flame }[] = [
 ];
 export default function FeedPage() {
   const [params, setParams] = useSearchParams();
-  const sort = (
-    tabs.some((tab) => tab.id === params.get('sort')) ? params.get('sort') : 'trending'
-  ) as FeedSort;
-  const category = params.get('category') || '';
-  const query = params.get('q') || '';
+  const { sort, category, query, page, offset, path } = feedOptions(params);
   const [search, setSearch] = useState(query);
   const { profile } = useSession();
-  const page = Math.max(1, Math.floor(Number(params.get('page')) || 1));
-  const offset = (page - 1) * 50;
-  const result = useLoad(
-    () =>
-      api<FeedResult>(
-        `/problems?${new URLSearchParams({ sort, offset: String(offset), ...(category ? { category } : {}), ...(query ? { q: query } : {}) })}`,
-      ),
-    [sort, category, query, page, profile?.id],
-  );
+  const result = useLoad(() => api<FeedResult>(path), [path, profile?.id]);
   useEffect(() => setSearch(query), [query]);
   function change(key: string, value: string) {
     const next = new URLSearchParams(params);

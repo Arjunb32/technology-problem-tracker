@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { modalKey } from './browser';
 
 /** Keeps keyboard interaction inside the active modal and restores its opener. */
 export function useModalAccessibility(open: boolean, onClose: () => void) {
@@ -23,33 +24,22 @@ export function useModalAccessibility(open: boolean, onClose: () => void) {
     );
     (firstField || focusable()[0] || dialog).focus();
     const keyboard = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        closeRef.current();
-        return;
-      }
-      if (event.key !== 'Tab') return;
-      const controls = focusable();
-      const first = controls[0],
-        last = controls[controls.length - 1];
-      if (!first) {
-        event.preventDefault();
-        dialog.focus();
-        return;
-      }
-      if (
-        event.shiftKey &&
-        (document.activeElement === first || !dialog.contains(document.activeElement))
-      ) {
-        event.preventDefault();
-        last.focus();
-      } else if (
-        !event.shiftKey &&
-        (document.activeElement === last || !dialog.contains(document.activeElement))
-      ) {
-        event.preventDefault();
-        first.focus();
-      }
+      if (event.key !== 'Escape' && event.key !== 'Tab') return;
+      const controls = event.key === 'Tab' ? focusable() : [];
+      const active = document.activeElement as HTMLElement;
+      const action = modalKey(
+        event.key,
+        event.shiftKey,
+        controls.length,
+        controls.indexOf(active),
+        dialog.contains(active),
+      );
+      if (action === 'default') return;
+      event.preventDefault();
+      if (action === 'close') closeRef.current();
+      else if (action === 'first') controls[0]?.focus();
+      else if (action === 'last') controls.at(-1)?.focus();
+      else dialog.focus();
     };
     document.addEventListener('keydown', keyboard);
     return () => {
