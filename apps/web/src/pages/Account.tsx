@@ -13,14 +13,14 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import {
-  profileSchema,
   type Profile,
   type PublicProfile,
   type Problem,
   type Solution,
   type Notification,
 } from '@tracker/contracts';
-import { api, json, supabase } from '../api';
+import { command, supabase } from '../api';
+import { oauthOptions, profileSubmission, splitTags } from '../browser';
 import { useSession } from '../context';
 import {
   Avatar,
@@ -56,7 +56,7 @@ export function AuthPrompt({ title, description }: { title: string; description:
 export function FollowingPage() {
   const { profile, loading } = useSession();
   const result = useLoad(
-    () => (profile ? api<Problem[]>('/me/following') : Promise.resolve([])),
+    () => (profile ? command<Problem[]>('following') : Promise.resolve([])),
     [profile?.id],
   );
   if (loading) return <Loading />;
@@ -98,14 +98,14 @@ export function FollowingPage() {
 export function NotificationsPage() {
   const { profile, loading, notice } = useSession();
   const result = useLoad(
-    () => (profile ? api<Notification[]>('/me/notifications') : Promise.resolve([])),
+    () => (profile ? command<Notification[]>('notifications') : Promise.resolve([])),
     [profile?.id],
   );
   const [busy, setBusy] = useState('');
   async function mark(item: Notification) {
     setBusy(item.id);
     try {
-      await api(`/me/notifications/${item.id}`, { method: 'PATCH', body: json({ read: true }) });
+      await command('markNotification', item.id);
       result.setData(
         (value) =>
           value?.map((notification) =>
@@ -191,8 +191,9 @@ export function ProfilePage() {
   const { profile: viewer } = useSession();
   const result = useLoad(
     () =>
-      api<{ profile: PublicProfile; problems: Problem[]; solutions: Solution[] }>(
-        `/profiles/${id}`,
+      command<{ profile: PublicProfile; problems: Problem[]; solutions: Solution[] }>(
+        'profile',
+        id,
       ),
     [id],
   );
@@ -342,21 +343,14 @@ function ProfileSettings({ profile }: { profile: Profile }) {
   async function submit(event: FormEvent) {
     event.preventDefault();
     setError('');
-    const input = {
-      ...form,
-      expertise: expertise
-        .split(',')
-        .map((value) => value.trim())
-        .filter(Boolean),
-    };
-    const parsed = profileSchema.safeParse(input);
-    if (!parsed.success) {
-      setError(parsed.error.issues.map((issue) => issue.message).join(' '));
+    const parsed = profileSubmission(form, expertise);
+    if (parsed.error !== undefined) {
+      setError(parsed.error);
       return;
     }
     setBusy(true);
     try {
-      await api('/me', { method: 'PATCH', body: json(parsed.data) });
+      await command('saveProfile', undefined, parsed.data);
       clearDraft();
       await refreshProfile();
       notice('Your profile is updated.');
@@ -371,10 +365,7 @@ function ProfileSettings({ profile }: { profile: Profile }) {
     setLinking(provider);
     const { error: linkError } = await supabase.auth.linkIdentity({
       provider,
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-        ...(provider === 'azure' ? { scopes: 'email' } : {}),
-      },
+      options: oauthOptions(window.location.origin, provider),
     });
     if (linkError) {
       notice(linkError.message, 'error');
@@ -426,10 +417,7 @@ function ProfileSettings({ profile }: { profile: Profile }) {
                 setExpertise(e.target.value);
                 setForm({
                   ...form,
-                  expertise: e.target.value
-                    .split(',')
-                    .map((value) => value.trim())
-                    .filter(Boolean),
+                  expertise: splitTags(e.target.value),
                 });
               }}
             />

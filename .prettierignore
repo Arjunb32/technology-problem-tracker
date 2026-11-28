@@ -7,3 +7,8 @@ test-results
 pnpm-lock.yaml
 *.tsbuildinfo
 technology_problem_solving_platform_complete_idea.md
+
+target
+apps/api/generated
+Cargo.lock
+packages/contracts/generated

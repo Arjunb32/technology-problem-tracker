@@ -1,4 +1,5 @@
-import { z } from 'zod';
+import { validate, test_stats } from '../generated/tracker_contracts.js';
+export { default as initContracts } from '../generated/tracker_contracts.js';
 
 export const categories = ['Computers', 'Software', 'Networking'] as const;
 export const statuses = [
@@ -210,98 +211,55 @@ export interface ApiError {
   details?: unknown;
 }
 
-const shortText = z.string().trim().max(300);
-const bodyText = z.string().trim().max(12000);
-export const problemInputSchema = z
-  .object({
-    title: z.string().trim().min(10, 'Use at least 10 characters for the title.').max(180),
-    description: bodyText.min(30, 'Add at least 30 characters describing the issue.'),
-    category: z.enum(categories),
-    product: shortText.min(2),
-    classification: z.enum(['Hardware', 'Software', 'Both']),
-    setup: z.string().trim().max(2000).default(''),
-    symptoms: bodyText.default(''),
-    steps: bodyText.default(''),
-    attemptedFixes: bodyText.default(''),
-    tags: z.array(z.string().trim().min(1).max(40)).max(8).default([]),
-    affected: z.boolean().default(true),
-    version: z.number().int().positive().optional(),
-  })
-  .strict();
-export type ProblemInput = z.input<typeof problemInputSchema>;
-export const solutionInputSchema = z
-  .object({
-    title: z.string().trim().min(5).max(180),
-    instructions: bodyText.min(20),
-    reasoning: bodyText.default(''),
-    supportedSetup: z.string().trim().min(3).max(2000),
-    limitations: bodyText.default(''),
-    warnings: bodyText.default(''),
-  })
-  .strict();
-export type SolutionInput = z.input<typeof solutionInputSchema>;
-export const participationSchema = z
-  .object({
-    kind: z.enum(['affected', 'vote', 'follow']),
-    active: z.boolean(),
-    setup: z.string().trim().max(2000).default(''),
-  })
-  .strict()
-  .superRefine((v, c) => {
-    if (v.kind === 'affected' && v.active && v.setup.length < 3)
-      c.addIssue({
-        code: 'custom',
-        path: ['setup'],
-        message: 'Describe the setup where you experience this issue.',
-      });
-  });
-export const solutionTestSchema = z
-  .object({
-    revisionId: z.string().min(1),
-    outcome: z.enum(outcomes),
-    setup: z.string().trim().min(3).max(2000),
-    evidence: bodyText.default(''),
-  })
-  .strict();
-export const verificationSchema = z
-  .object({
-    revisionId: z.string().min(1),
-    evidence: z.string().trim().min(10).max(12000),
-    supportedScope: z.string().trim().min(3).max(2000),
-    reason: z.string().trim().min(10).max(2000),
-    decision: z.enum(['verified', 'revoked']),
-  })
-  .strict();
-export const statusChangeSchema = z
-  .object({ status: z.enum(statuses), reason: z.string().trim().min(10).max(2000) })
-  .strict();
-export const reportSchema = z
-  .object({
-    targetType: z.enum(['problem', 'solution', 'comment', 'profile']),
-    targetId: z.string().min(1),
-    reason: z.string().trim().min(3).max(100),
-    details: z.string().trim().min(10).max(4000),
-  })
-  .strict();
-export const profileSchema = z
-  .object({
-    displayName: z.string().trim().min(2).max(80),
-    username: z
-      .string()
-      .trim()
-      .regex(/^[a-zA-Z0-9_-]{3,30}$/),
-    bio: z.string().trim().max(600),
-    expertise: z.array(z.string().trim().min(1).max(40)).max(8),
-  })
-  .strict();
-export function testStats(tests: SolutionTest[]) {
-  const counts = Object.fromEntries(
-    outcomes.map((o) => [o, tests.filter((t) => t.outcome === o).length]),
-  ) as Record<TestOutcome, number>;
-  const applicable = tests.length - counts['Not applicable'];
-  return {
-    counts,
-    applicable,
-    successRate: applicable ? Math.round((counts.Worked / applicable) * 100) : null,
+export type ProblemInput = Pick<
+  Problem,
+  'title' | 'description' | 'category' | 'product' | 'classification'
+> &
+  Partial<Pick<Problem, 'setup' | 'symptoms' | 'steps' | 'attemptedFixes' | 'tags' | 'version'>> & {
+    affected?: boolean;
   };
+export type SolutionInput = Pick<SolutionRevision, 'title' | 'instructions' | 'supportedSetup'> &
+  Partial<Pick<SolutionRevision, 'reasoning' | 'limitations' | 'warnings'>>;
+export type Issue = { code: string; path: (string | number)[]; message: string };
+export class ContractError extends Error {
+  constructor(public issues: Issue[]) {
+    super(issues[0]?.message ?? 'Check the form fields.');
+  }
+}
+export function schema<T>(name: string) {
+  const safeParse = (
+    value: unknown,
+  ): { success: true; data: T } | { success: false; error: { issues: Issue[] } } =>
+    JSON.parse(validate(name, JSON.stringify(value) ?? ''));
+  return {
+    safeParse,
+    parse(value: unknown) {
+      const result = safeParse(value);
+      if (!result.success) throw new ContractError(result.error.issues);
+      return result.data;
+    },
+  };
+}
+export const problemInputSchema = schema<ProblemInput>('problem'),
+  solutionInputSchema = schema<SolutionInput>('solution');
+export const profileSchema =
+  schema<Pick<Profile, 'username' | 'displayName' | 'bio' | 'expertise'>>('profile');
+export const participationSchema = schema('participation'),
+  solutionTestSchema = schema('test'),
+  verificationSchema = schema('verify'),
+  statusChangeSchema = schema('status'),
+  reportSchema = schema('report');
+export const commentSchema = schema('comment'),
+  hideSchema = schema('hide'),
+  restrictSchema = schema('restrict'),
+  mergeSchema = schema('merge'),
+  reasonSchema = schema('reason');
+export const readSchema = schema('read'),
+  demoSchema = schema<{ userId: string }>('demo');
+export function testStats(tests: SolutionTest[]): {
+  counts: Record<TestOutcome, number>;
+  applicable: number;
+  successRate: number | null;
+} {
+  return JSON.parse(test_stats(JSON.stringify(tests)));
 }

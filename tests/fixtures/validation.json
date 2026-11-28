@@ -1,0 +1,298 @@
+[
+  {
+    "schema": "problem",
+    "input": {
+      "title": "👩👩👩👩👩",
+      "description": "A solid reproducible report goes here.",
+      "category": "Software",
+      "classification": "Both",
+      "product": " App ",
+      "tags": [" test "]
+    },
+    "expected": {
+      "success": false,
+      "error": {
+        "issues": [
+          {
+            "origin": "string",
+            "code": "too_small",
+            "minimum": 10,
+            "inclusive": true,
+            "path": ["title"],
+            "message": "Use at least 10 characters for the title."
+          }
+        ]
+      }
+    }
+  },
+  {
+    "schema": "profile",
+    "input": {
+      "username": "bad!",
+      "expertise": [null],
+      "bio": "bio",
+      "displayName": "Arjun"
+    },
+    "expected": {
+      "success": false,
+      "error": {
+        "issues": [
+          {
+            "origin": "string",
+            "code": "invalid_format",
+            "format": "regex",
+            "pattern": "/^[a-zA-Z0-9_-]{3,30}$/",
+            "path": ["username"],
+            "message": "Invalid string: must match pattern /^[a-zA-Z0-9_-]{3,30}$/"
+          },
+          {
+            "expected": "string",
+            "code": "invalid_type",
+            "path": ["expertise", 0],
+            "message": "Invalid input: expected string, received null"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "schema": "participation",
+    "input": {
+      "kind": "affected",
+      "active": true,
+      "setup": "  "
+    },
+    "expected": {
+      "success": false,
+      "error": {
+        "issues": [
+          {
+            "code": "custom",
+            "path": ["setup"],
+            "message": "Describe the setup where you experience this issue."
+          }
+        ]
+      }
+    }
+  },
+  {
+    "schema": "problem",
+    "input": {
+      "xyz": 1,
+      "more": 2
+    },
+    "expected": {
+      "success": false,
+      "error": {
+        "issues": [
+          {
+            "expected": "string",
+            "code": "invalid_type",
+            "path": ["title"],
+            "message": "Invalid input: expected string, received undefined"
+          },
+          {
+            "expected": "string",
+            "code": "invalid_type",
+            "path": ["description"],
+            "message": "Invalid input: expected string, received undefined"
+          },
+          {
+            "code": "invalid_value",
+            "values": ["Computers", "Software", "Networking"],
+            "path": ["category"],
+            "message": "Invalid option: expected one of \"Computers\"|\"Software\"|\"Networking\""
+          },
+          {
+            "expected": "string",
+            "code": "invalid_type",
+            "path": ["product"],
+            "message": "Invalid input: expected string, received undefined"
+          },
+          {
+            "code": "invalid_value",
+            "values": ["Hardware", "Software", "Both"],
+            "path": ["classification"],
+            "message": "Invalid option: expected one of \"Hardware\"|\"Software\"|\"Both\""
+          },
+          {
+            "code": "unrecognized_keys",
+            "keys": ["xyz", "more"],
+            "path": [],
+            "message": "Unrecognized keys: \"xyz\", \"more\""
+          }
+        ]
+      }
+    }
+  },
+  {
+    "schema": "test",
+    "input": null,
+    "expected": {
+      "success": false,
+      "error": {
+        "issues": [
+          {
+            "expected": "object",
+            "code": "invalid_type",
+            "path": [],
+            "message": "Invalid input: expected object, received null"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "schema": "solution",
+    "input": {},
+    "expected": {
+      "success": false,
+      "error": {
+        "issues": [
+          {
+            "expected": "string",
+            "code": "invalid_type",
+            "path": ["title"],
+            "message": "Invalid input: expected string, received undefined"
+          },
+          {
+            "expected": "string",
+            "code": "invalid_type",
+            "path": ["instructions"],
+            "message": "Invalid input: expected string, received undefined"
+          },
+          {
+            "expected": "string",
+            "code": "invalid_type",
+            "path": ["supportedSetup"],
+            "message": "Invalid input: expected string, received undefined"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "schema": "read",
+    "input": {
+      "read": false
+    },
+    "expected": {
+      "success": false,
+      "error": {
+        "issues": [
+          {
+            "code": "invalid_value",
+            "values": [true],
+            "path": ["read"],
+            "message": "Invalid input: expected true"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "schema": "problem",
+    "input": {
+      "title": "ok",
+      "version": 1.2
+    },
+    "expected": {
+      "success": false,
+      "error": {
+        "issues": [
+          {
+            "origin": "string",
+            "code": "too_small",
+            "minimum": 10,
+            "inclusive": true,
+            "path": ["title"],
+            "message": "Use at least 10 characters for the title."
+          },
+          {
+            "expected": "string",
+            "code": "invalid_type",
+            "path": ["description"],
+            "message": "Invalid input: expected string, received undefined"
+          },
+          {
+            "code": "invalid_value",
+            "values": ["Computers", "Software", "Networking"],
+            "path": ["category"],
+            "message": "Invalid option: expected one of \"Computers\"|\"Software\"|\"Networking\""
+          },
+          {
+            "expected": "string",
+            "code": "invalid_type",
+            "path": ["product"],
+            "message": "Invalid input: expected string, received undefined"
+          },
+          {
+            "code": "invalid_value",
+            "values": ["Hardware", "Software", "Both"],
+            "path": ["classification"],
+            "message": "Invalid option: expected one of \"Hardware\"|\"Software\"|\"Both\""
+          },
+          {
+            "expected": "int",
+            "format": "safeint",
+            "code": "invalid_type",
+            "path": ["version"],
+            "message": "Invalid input: expected int, received number"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "schema": "merge",
+    "input": {
+      "sourceId": "a",
+      "targetId": "b",
+      "reason": "  a complete reason  "
+    },
+    "expected": {
+      "success": true,
+      "data": {
+        "sourceId": "a",
+        "targetId": "b",
+        "reason": "a complete reason"
+      }
+    }
+  },
+  {
+    "schema": "offset",
+    "input": "Infinity",
+    "expected": {
+      "success": false,
+      "error": {
+        "issues": [
+          {
+            "expected": "number",
+            "code": "invalid_type",
+            "received": "Infinity",
+            "path": [],
+            "message": "Invalid input: expected number, received Infinity"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "schema": "offset",
+    "input": -0.5,
+    "expected": {
+      "success": false,
+      "error": {
+        "issues": [
+          {
+            "expected": "int",
+            "format": "safeint",
+            "code": "invalid_type",
+            "path": [],
+            "message": "Invalid input: expected int, received number"
+          }
+        ]
+      }
+    }
+  }
+]

@@ -1,3 +1,4 @@
+import './node-runtime.mjs';
 import { createServer } from 'node:http';
 import { loadEnvFile } from 'node:process';
 import { resolve, isAbsolute } from 'node:path';

@@ -1,0 +1,102 @@
+{
+  "path": {
+    "post": {
+      "summary": "Loopback-only demonstration sign-in",
+      "operationId": "post__auth_demo",
+      "parameters": [],
+      "security": [],
+      "responses": {
+        "200": {
+          "description": "Successful response",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuthResult"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Sign-in required",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiError"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "Permission denied",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiError"
+              }
+            }
+          }
+        },
+        "409": {
+          "description": "Concurrent update or lifecycle conflict",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiError"
+              }
+            }
+          }
+        },
+        "422": {
+          "description": "Validation or evidence requirement failed",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiError"
+              }
+            }
+          }
+        },
+        "429": {
+          "description": "40 writes per account per minute",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiError"
+              }
+            }
+          }
+        },
+        "503": {
+          "description": "Capacity or service unavailable",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiError"
+              }
+            }
+          }
+        }
+      },
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/DemoAuthInput"
+            }
+          }
+        }
+      }
+    }
+  },
+  "input": {
+    "type": "object",
+    "properties": {
+      "userId": {
+        "type": "string",
+        "enum": ["demo-alex", "demo-sam", "demo-morgan"]
+      }
+    },
+    "required": ["userId"]
+  }
+}

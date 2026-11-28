@@ -1,0 +1,17 @@
+[package]
+name = "tracker-backup"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+anyhow = "1"
+chrono = { workspace = true, features = ["clock"] }
+percent-encoding = "2"
+reqwest = { version = "0.12", features = ["blocking","json"] }
+serde.workspace = true
+serde_json.workspace = true
+sha2 = "0.10"
+tempfile = "3"
+url = "2"
+uuid = { workspace = true, features = ["v4"] }

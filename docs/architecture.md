@@ -36,7 +36,7 @@ Statuses are Reported, Needs information, Confirmed, Investigating, Partially so
 ```mermaid
 flowchart LR
   Browser[Website on Cloudflare Pages] -->|OAuth| Auth[Supabase Auth]
-  Browser -->|Bearer session token| API[Hono API on Cloudflare Workers]
+  Browser -->|Bearer session token| API[Rust API on Cloudflare Workers]
   API -->|Validate session| Auth
   API -->|Restricted service access| DB[Supabase PostgreSQL]
   API -->|Validate and store images| Storage[Private Supabase Storage]
@@ -45,7 +45,7 @@ flowchart LR
 
 The browser receives the public Supabase project URL and public publishable/anon key. The service-role key exists only in the backend and the owner's backup environment. The backend validates session identity, account restrictions, permissions, ownership, and input before writes. Application tables deny direct browser access.
 
-The versioned `/api/v1` interface covers accounts, problems, participation, comments, solution revisions, tests, notifications, and moderation. Shared contracts provide validation on both applications. Consult `/api/v1/openapi.json` for the API's exact routes and response shapes.
+The versioned `/api/v1` interface covers accounts, problems, participation, comments, solution revisions, tests, notifications, and moderation. The browser and Worker share Rust validation compiled to WebAssembly. The Worker uses a small HTTP and provider adapter for Cloudflare and Supabase. Consult `/api/v1/openapi.json` for the API's exact routes and response shapes.
 
 Database uniqueness constraints prevent duplicate participation under simultaneous requests. Transactional functions preserve evidence during lifecycle changes and duplicate merges. Merging deduplicates participation, retains contributions, and redirects the old problem address to the canonical issue.
 

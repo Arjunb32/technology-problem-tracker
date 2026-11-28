@@ -13,3 +13,7 @@ playwright-report/
 test-results/
 backups/
 *.log
+
+target/
+apps/api/generated/
+packages/contracts/generated/

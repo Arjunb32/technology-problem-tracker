@@ -12,7 +12,8 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import type { Problem, ProblemStatus, Profile, Attachment, TargetType } from '@tracker/contracts';
-import { api, apiBlob, json, compressImage, uploadImages, UploadFailure } from './api';
+import { command, apiBlob, compressImage, uploadImages, UploadFailure } from './api';
+import { reconcileDraft, requestPlan } from './browser';
 import { useSession, initials } from './context';
 import { useModalAccessibility } from './modal';
 
@@ -45,15 +46,26 @@ export function useDraft<T>(key: string, defaults: T) {
   const [value, setValue] = useState<T>(() => {
     try {
       const saved = sessionStorage.getItem(key);
-      return saved ? { ...defaults, ...JSON.parse(saved) } : defaults;
+      return reconcileDraft(defaults, saved);
     } catch {
       return defaults;
     }
   });
   useEffect(() => {
-    sessionStorage.setItem(key, JSON.stringify(value));
+    try {
+      sessionStorage.setItem(key, JSON.stringify(value));
+    } catch {
+      // Keep the draft in memory if the browser has disabled storage or exhausted its quota.
+    }
   }, [key, value]);
-  return [value, setValue, () => sessionStorage.removeItem(key)] as const;
+  const clear = () => {
+    try {
+      sessionStorage.removeItem(key);
+    } catch {
+      // The browser may disallow access to session storage.
+    }
+  };
+  return [value, setValue, clear] as const;
 }
 export function shortDate(date: string) {
   return new Intl.DateTimeFormat('en', { day: 'numeric', month: 'short' }).format(new Date(date));
@@ -333,7 +345,7 @@ export function Attachments({
   async function remove(id: string) {
     if (!window.confirm('Remove this screenshot?')) return;
     try {
-      await api(`/attachments/${id}`, { method: 'DELETE' });
+      await command('deleteImage', id);
       refresh();
       notice('Screenshot removed.');
     } catch (error) {
@@ -398,7 +410,7 @@ function AttachmentImage({
       objectUrl = '';
     setUrl('');
     setError('');
-    void apiBlob(`/attachments/${encodeURIComponent(item.id)}`)
+    void apiBlob(requestPlan('readImage', item.id).path)
       .then((blob) => {
         if (!active) return;
         objectUrl = URL.createObjectURL(blob);
@@ -465,10 +477,7 @@ export function ReportButton({
     setBusy(true);
     setError('');
     try {
-      await api('/reports', {
-        method: 'POST',
-        body: json({ targetType, targetId, reason, details }),
-      });
+      await command('report', undefined, { targetType, targetId, reason, details });
       setOpen(false);
       setDetails('');
       notice('Report sent to the moderators. Thank you.');

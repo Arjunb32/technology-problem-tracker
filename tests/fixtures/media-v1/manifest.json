@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "kind": "media",
+  "complete": true,
+  "bucket": "tracker-images",
+  "files": [
+    {
+      "file": "files/000000.txt",
+      "bytes": 28,
+      "sha256": "9becffaa3281e09328be1630a08e4732976d6548d26a84a39953bf7ccc66707e",
+      "objectPath": "fixture/evidence.txt",
+      "contentType": "text/plain"
+    }
+  ]
+}

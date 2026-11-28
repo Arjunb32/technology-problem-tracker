@@ -6,17 +6,21 @@ The first release covers **Computers, Software, and Networking**. Affected confi
 
 ## Run locally
 
-Prerequisites: Node.js 24 and the pnpm version pinned in `package.json`.
+Install stable Rust with a native linker, Node.js 24, and pnpm 11.25.0. Install the WebAssembly target and matching binding generator once.
 
 ```sh
-pnpm install
+rustup target add wasm32-unknown-unknown
+rustup component add rustfmt clippy
+cargo install wasm-bindgen-cli --version 0.2.130 --locked
+pnpm install --frozen-lockfile
 pnpm dev
 ```
 
 Open `http://127.0.0.1:5173`. The API runs on `http://127.0.0.1:8787`. Without production credentials, the application runs a clearly labelled local demonstration with sample issues and local demo identities. Its file-backed data lives in ignored `.data/` storage; see the API configuration for `DEMO_DATA_FILE`. This mode is for development and review and must never be exposed to the internet.
 
 ```sh
-pnpm check          # Types, API/database/backup tests, production builds
+pnpm check         # Rust formatting, Clippy, tests and release builds
+pnpm build         # Native backup tool, Pages website and Worker dry-run package
 pnpm test:e2e      # Browser journeys (Microsoft Edge by default)
 ```
 
@@ -26,9 +30,10 @@ Browser tests can use a Playwright Chromium installation by setting `PLAYWRIGHT_
 
 | Location              | Responsibility                                                        |
 | --------------------- | --------------------------------------------------------------------- |
-| `apps/web`            | React, Vite, TypeScript, Tailwind website                             |
-| `apps/api`            | Hono REST API, local demo server, Cloudflare Worker                   |
-| `packages/contracts`  | Shared validation and types                                           |
+| `apps/web`            | Browser rendering and platform integration with Vite and React        |
+| `apps/api`            | HTTP, Supabase, Cloudflare Worker and loopback adapters               |
+| `crates`              | Rust tracker, validation, and native backup commands                  |
+| `packages/contracts`  | JSON schemas, TypeScript types and WebAssembly bindings               |
 | `supabase/migrations` | PostgreSQL tables, constraints, restricted access, functions          |
 | `scripts`             | Owner-run backup, integrity, restore preflight tools                  |
 | `docs`                | Product workflow, provider setup, launch checks, operations, policies |
@@ -49,5 +54,6 @@ Credentials, live OAuth verification, hosted database migrations, hosted restore
 - [Community rules](docs/community-rules.md)
 - [Beta privacy information](docs/privacy.md)
 - [Implementation and validation record](docs/validation.md)
+- [Rust migration and benchmark results](docs/rust-migration.md)
 
 No AI features, payments, manufacturer dashboards, advanced reputation, or mobile applications are included in this beta. User-supplied screenshots and setup information should never contain passwords, access tokens, personal addresses, or confidential logs.

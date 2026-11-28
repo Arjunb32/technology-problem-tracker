@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import { ApiFailure, collections, type State, type Store } from './state.js';
+import { ApiFailure, storageResult, type State, type Store } from './state.js';
+import { commit_decision, prepare_commit, snapshot_delta } from '../generated/tracker_core.js';
 import type { FeedResult, FeedSort } from '@tracker/contracts';
 
 export interface FeedQuery {
@@ -12,11 +13,21 @@ export interface FeedQuery {
 export interface ProductionStore extends Store {
   feed(query: FeedQuery): Promise<FeedResult>;
 }
+interface Commit {
+  p_expected: number;
+  p_changes: Record<string, { upsert: unknown[]; remove: string[] }>;
+}
+
 export class SupabaseStore implements ProductionStore {
   readonly demo = false;
   readonly client: SupabaseClient;
-  constructor(url: string, key: string) {
+  constructor(
+    private url: string,
+    private key: string,
+    private fetcher: typeof fetch = fetch,
+  ) {
     this.client = createClient(url, key, {
+      global: { fetch: fetcher },
       auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
     });
   }
@@ -30,54 +41,74 @@ export class SupabaseStore implements ProductionStore {
       throw new ApiFailure(503, 'database_unavailable', 'Your profile is temporarily unavailable.');
     return data?.payload ?? null;
   }
+  async readJson(problemId?: string): Promise<string> {
+    // Forward the PostgREST response straight to the Rust JSON reader.
+    try {
+      const response = await this.fetcher(
+        this.url.replace(/\/$/, '') + '/rest/v1/rpc/tracker_snapshot',
+        {
+          method: 'POST',
+          redirect: 'error',
+          headers: {
+            apikey: this.key,
+            Authorization: 'Bearer ' + this.key,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ p_problem_id: problemId ?? null }),
+        },
+      );
+      if (response.ok) return await response.text();
+    } catch {}
+    throw new ApiFailure(
+      503,
+      'database_unavailable',
+      'The database is unavailable. Please try again.',
+    );
+  }
   async read(problemId?: string): Promise<State> {
-    const { data, error } = await this.client.rpc('tracker_snapshot', {
-      p_problem_id: problemId ?? null,
-    });
-    if (error)
+    const snapshot = await this.readJson(problemId);
+    try {
+      return JSON.parse(snapshot) as State;
+    } catch {
       throw new ApiFailure(
         503,
         'database_unavailable',
         'The database is unavailable. Please try again.',
       );
-    return data as State;
-  }
-  async transaction<T>(fn: (state: State) => T): Promise<T> {
-    for (let attempt = 0; attempt < 6; attempt++) {
-      const old = await this.read();
-      const next = structuredClone(old);
-      const result = fn(next);
-      const changes: Record<string, { upsert: unknown[]; remove: string[] }> = {};
-      for (const key of collections) {
-        const before = new Map(
-          (old[key] as Array<{ id: string }>).map((row) => [row.id, JSON.stringify(row)]),
-        );
-        const after = next[key] as Array<{ id: string }>;
-        const upsert = after.filter((row) => before.get(row.id) !== JSON.stringify(row));
-        const ids = new Set(after.map((row) => row.id));
-        const remove = [...before.keys()].filter((key) => !ids.has(key));
-        if (upsert.length || remove.length) changes[key] = { upsert, remove };
-      }
-      const { data, error } = await this.client.rpc('tracker_commit', {
-        p_expected: old.version,
-        p_changes: changes,
-      });
-      if (error) {
-        if (error.code === '23505')
-          throw new ApiFailure(409, 'conflict', 'That value is already in use.');
-        throw new ApiFailure(
-          503,
-          'database_unavailable',
-          'Your changes could not be saved. Please try again.',
-        );
-      }
-      if (data === true) return result;
     }
-    throw new ApiFailure(
-      409,
-      'concurrent_update',
-      'This content changed while you were editing. Reload and try again.',
+  }
+
+  command<T>(requestJson: string): Promise<T> {
+    return this.commit((snapshot) =>
+      storageResult<{ value: T; commit: Commit }>(prepare_commit(snapshot, requestJson)),
     );
+  }
+
+  transaction<T>(fn: (state: State) => T): Promise<T> {
+    return this.commit((snapshot) => {
+      const next = JSON.parse(snapshot) as State;
+      const value = fn(next);
+      const { commit } = storageResult<{ commit: Commit }>(
+        snapshot_delta(snapshot, JSON.stringify(next)),
+      );
+      return { value, commit };
+    });
+  }
+
+  private async commit<T>(prepare: (snapshot: string) => { value: T; commit: Commit }): Promise<T> {
+    for (let attempt = 1; ; attempt++) {
+      const { value, commit } = prepare(await this.readJson());
+      const { data, error } = await this.client.rpc('tracker_commit', commit);
+      const errorCode = error
+        ? (error.code ?? '')
+        : data === false || data === true
+          ? undefined
+          : '';
+      const decision = storageResult<'committed' | 'retry'>(
+        commit_decision(attempt, data === true, errorCode),
+      );
+      if (decision === 'committed') return value;
+    }
   }
   async search(query: string): Promise<string[]> {
     const { data, error } = await this.client.rpc('tracker_search', { p_query: query });

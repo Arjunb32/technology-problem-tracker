@@ -3,8 +3,6 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowRight, CheckCircle2, FileText, Info, Save, Search, ShieldCheck } from 'lucide-react';
 import {
   categories,
-  problemInputSchema,
-  solutionInputSchema,
   type Problem,
   type ProblemDetail,
   type ProblemInput,
@@ -12,7 +10,8 @@ import {
   type SolutionInput,
   type FeedResult,
 } from '@tracker/contracts';
-import { api, json, uploadImages } from '../api';
+import { api, command, uploadImages } from '../api';
+import { problemSubmission, solutionSubmission, splitTags, suggestionPath } from '../browser';
 import { useSession } from '../context';
 import {
   Breadcrumb,
@@ -50,7 +49,7 @@ export function ProblemFormPage() {
   const { id } = useParams();
   const { profile, loading, openLogin } = useSession();
   const result = useLoad(
-    () => (id ? api<ProblemDetail>(`/problems/${id}`) : Promise.resolve(null)),
+    () => (id ? command<ProblemDetail>('detail', id) : Promise.resolve(null)),
     [id],
   );
   if (loading || result.loading) return <Loading label="Preparing the report form…" />;
@@ -97,15 +96,18 @@ function ProblemForm({ problem }: { problem?: Problem }) {
     [searching, setSearching] = useState(false),
     [searchError, setSearchError] = useState('');
   useEffect(() => {
-    if (problem || form.title.trim().length < 6) {
+    const suggestion = suggestionPath(form.title, Boolean(problem));
+    if (!suggestion) {
       setSimilar([]);
+      setSearching(false);
+      setSearchError('');
       return;
     }
     let active = true;
     const timer = setTimeout(() => {
       setSearching(true);
       setSearchError('');
-      void api<FeedResult>(`/problems?q=${encodeURIComponent(form.title)}&sort=trending`)
+      void api<FeedResult>(suggestion)
         .then((result) => {
           if (active) setSimilar(result.items.slice(0, 3));
         })
@@ -127,31 +129,14 @@ function ProblemForm({ problem }: { problem?: Problem }) {
     event.preventDefault();
     if (!requireUser()) return;
     setError('');
-    const input = {
-      ...form,
-      tags: tags
-        .split(',')
-        .map((tag) => tag.trim())
-        .filter(Boolean),
-      ...(problem ? { version: problem.version } : {}),
-    };
-    const parsed = problemInputSchema.safeParse(input);
-    if (!parsed.success) {
-      setError(
-        parsed.error.issues.map((issue) => `${issue.path.join(' ')}: ${issue.message}`).join(' '),
-      );
-      return;
-    }
-    if (!problem && form.affected && (form.setup?.trim().length || 0) < 3) {
-      setError('Describe the setup where you are affected, or untick the affected confirmation.');
+    const parsed = problemSubmission(form, tags, problem?.version);
+    if (parsed.error !== undefined) {
+      setError(parsed.error);
       return;
     }
     setBusy(true);
     try {
-      const saved = await api<Problem>(problem ? `/problems/${problem.id}` : '/problems', {
-        method: problem ? 'PATCH' : 'POST',
-        body: json(parsed.data),
-      });
+      const saved = await command<Problem>('saveProblem', problem?.id, parsed.data);
       clearDraft();
       let uploadFailed = false;
       try {
@@ -339,13 +324,7 @@ function ProblemForm({ problem }: { problem?: Problem }) {
                 value={tags}
                 onChange={(e) => {
                   setTags(e.target.value);
-                  update(
-                    'tags',
-                    e.target.value
-                      .split(',')
-                      .map((tag) => tag.trim())
-                      .filter(Boolean),
-                  );
+                  update('tags', splitTags(e.target.value));
                 }}
                 placeholder="wifi, sleep-mode, windows-11"
               />
@@ -462,8 +441,8 @@ function ProblemForm({ problem }: { problem?: Problem }) {
 export function SolutionFormPage() {
   const { id, solutionId } = useParams();
   const result = useLoad(async () => {
-    const solution = solutionId ? await api<Solution>(`/solutions/${solutionId}`) : undefined;
-    const detail = await api<ProblemDetail>(`/problems/${solution?.problemId || id}`);
+    const solution = solutionId ? await command<Solution>('solution', solutionId) : undefined;
+    const detail = await command<ProblemDetail>('detail', solution?.problemId || id);
     return { solution, problem: detail.problem };
   }, [id, solutionId]);
   const { profile } = useSession();
@@ -507,18 +486,17 @@ function SolutionForm({ solution, problem }: { solution?: Solution; problem: Pro
     event.preventDefault();
     if (!requireUser()) return;
     setError('');
-    const parsed = solutionInputSchema.safeParse(form);
-    if (!parsed.success) {
-      setError(
-        parsed.error.issues.map((issue) => `${issue.path.join(' ')}: ${issue.message}`).join(' '),
-      );
+    const parsed = solutionSubmission(form);
+    if (parsed.error !== undefined) {
+      setError(parsed.error);
       return;
     }
     setBusy(true);
     try {
-      const saved = await api<Solution>(
-        solution ? `/solutions/${solution.id}` : `/problems/${problem.id}/solutions`,
-        { method: solution ? 'PATCH' : 'POST', body: json(parsed.data) },
+      const saved = await command<Solution>(
+        solution ? 'reviseSolution' : 'addSolution',
+        solution?.id || problem.id,
+        parsed.data,
       );
       clearDraft();
       let failed = false;
