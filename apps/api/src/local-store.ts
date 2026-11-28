@@ -1,4 +1,4 @@
-import { link, mkdir, open, readFile, rename, rm } from 'node:fs/promises';
+import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -61,13 +61,8 @@ export class LocalStore implements Store {
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
       const text = JSON.stringify(seedState());
-      try {
-        await this.save(text, true);
-        return text;
-      } catch (publishError) {
-        if ((publishError as NodeJS.ErrnoException).code !== 'EEXIST') throw publishError;
-        return await this.readFile();
-      }
+      await this.save(text);
+      return text;
     }
   }
 
@@ -94,23 +89,12 @@ export class LocalStore implements Store {
     }));
   }
 
-  private async save(text: string, create: boolean) {
+  private async save(text: string) {
     await mkdir(dirname(this.file), { recursive: true });
     const temporary = this.file + '.' + randomUUID() + '.tmp';
-    const file = await open(temporary, 'wx', 0o600);
     try {
-      try {
-        await file.writeFile(text);
-        await file.sync();
-      } finally {
-        await file.close();
-      }
-      if (create) {
-        // Exclusive publication avoids replacing state created by another process at startup.
-        await publishSnapshot(() => link(temporary, this.file));
-      } else {
-        await publishSnapshot(() => rename(temporary, this.file));
-      }
+      await writeFile(temporary, text, { flag: 'wx', mode: 0o600, flush: true });
+      await publishSnapshot(() => rename(temporary, this.file));
     } finally {
       // The target may already be committed. A cleanup failure cannot undo that commit.
       await rm(temporary, { force: true }).catch(() => undefined);
@@ -144,7 +128,7 @@ export class LocalStore implements Store {
   private mutate<T>(prepare: (snapshot: string) => { value: T; snapshot: string }): Promise<T> {
     const operation = this.queue.tail.then(async () => {
       const { value, snapshot } = prepare(await this.snapshot());
-      await this.save(snapshot, false);
+      await this.save(snapshot);
       this.queue.snapshot = Promise.resolve(snapshot);
       return value;
     });
